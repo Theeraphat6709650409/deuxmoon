@@ -41,10 +41,11 @@ def buy_product():
 
     data = request.json
     platform = data.get('platform')
+    duration_days = data.get('duration_days') # รับค่าจำนวนวัน
     user_id = data.get('user_id')
 
-    if not platform or not user_id:
-        return jsonify({'error': 'ข้อมูลไม่ครบถ้วน กรุณาเข้าสู่ระบบก่อน'}), 400
+    if not platform or not duration_days or not user_id:
+        return jsonify({'error': 'ข้อมูลไม่ครบถ้วน'}), 400
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -66,8 +67,8 @@ def buy_product():
         user = users[0]
         current_credit = float(user['credit_balance'])
 
-        # 2. ค้นหาสินค้า
-        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&status=eq.available&limit=1"
+        # 2. ค้นหาสินค้าตามแพลตฟอร์มและจำนวนวัน
+        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&limit=1"
         res = requests.get(get_url, headers=headers)
         res.raise_for_status()
         products = res.json()

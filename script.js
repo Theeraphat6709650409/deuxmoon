@@ -53,12 +53,19 @@ function renderProducts(products) {
         return;
     }
 
+    // จัดกลุ่มสินค้าด้วย คีย์ผสม (เช่น netflix_1, netflix_7, netflix_30)
     const groupedProducts = {};
     products.forEach(p => {
-        if (!groupedProducts[p.platform]) {
-            groupedProducts[p.platform] = { platform: p.platform, price: p.price, count: 1 };
+        const key = `${p.platform}_${p.duration_days}`;
+        if (!groupedProducts[key]) {
+            groupedProducts[key] = { 
+                platform: p.platform, 
+                duration_days: p.duration_days,
+                price: p.price, 
+                count: 1 
+            };
         } else {
-            groupedProducts[p.platform].count++;
+            groupedProducts[key].count++;
         }
     });
 
@@ -75,12 +82,12 @@ function renderProducts(products) {
         const cardHtml = `
             <div class="product-card">
                 <img src="${logoSrc}" alt="${product.platform}" class="product-logo">
-                <div class="product-name">รหัสเข้าใช้งาน ${product.platform.toUpperCase()}</div>
+                <div class="product-name">${product.platform.toUpperCase()} - ${product.duration_days} วัน</div>
                 <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">
-                    มีสินค้าพร้อมส่ง: ${product.count} รายการ
+                    พร้อมส่ง: ${product.count} รายการ
                 </div>
                 <div class="product-price">${product.price} THB</div>
-                <button class="btn-buy ${btnClass}" onclick="buyProduct('${product.platform}', ${product.price})">
+                <button class="btn-buy ${btnClass}" onclick="buyProduct('${product.platform}', ${product.duration_days}, ${product.price})">
                     ซื้อเลย
                 </button>
             </div>
@@ -89,24 +96,46 @@ function renderProducts(products) {
     });
 }
 
-// --- ฟังก์ชันสั่งซื้อสินค้า ---
-async function buyProduct(platform, price) {
-    const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${platform.toUpperCase()} ในราคา ${price} บาท หรือไม่?`);
+async function buyProduct(platform, duration_days, price) {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อครับ');
+        openAuthModal();
+        return;
+    }
+
+    const user = JSON.parse(userStr);
+
+    if (parseFloat(user.credit_balance) < price) {
+        alert('ยอดเงินของคุณไม่เพียงพอ กรุณาเติมเงินก่อนครับ');
+        toggleTopup();
+        return;
+    }
+
+    const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${platform.toUpperCase()} แบบ ${duration_days} วัน\nราคา ${price} บาท หรือไม่?`);
     if (!confirmBuy) return;
 
     try {
         const response = await fetch(`${API_URL}/buy`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ platform: platform })
+            body: JSON.stringify({ 
+                platform: platform,
+                duration_days: duration_days, // ส่งจำนวนวันไปบอกหลังบ้าน
+                user_id: user.id 
+            })
         });
         const result = await response.json();
 
         if (result.status === 'success') {
+            user.credit_balance = result.remaining_credit;
+            localStorage.setItem('user', JSON.stringify(user));
+            checkLoginStatus();
+            
             const data = result.data;
             
             let receiptHtml = `
-                <div>แพลตฟอร์ม: <span>${data.platform.toUpperCase()}</span></div>
+                <div>แพลตฟอร์ม: <span>${data.platform.toUpperCase()} (${duration_days} วัน)</span></div>
                 <div>บัญชี (ล็อกอิน): <span>${data.login}</span></div>
             `;
             if (data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.password}</span></div>`;
