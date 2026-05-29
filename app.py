@@ -41,9 +41,10 @@ def buy_product():
 
     data = request.json
     platform = data.get('platform')
+    user_id = data.get('user_id')
 
-    if not platform:
-        return jsonify({'error': 'กรุณาระบุแพลตฟอร์ม'}), 400
+    if not platform or not user_id:
+        return jsonify({'error': 'ข้อมูลไม่ครบถ้วน กรุณาเข้าสู่ระบบก่อน'}), 400
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -56,6 +57,16 @@ def buy_product():
     }
 
     try:
+        # 1. เช็คยอดเงินผู้ใช้ในฐานข้อมูล
+        user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{user_id}", headers=headers)
+        users = user_res.json()
+        if not users:
+            return jsonify({'status': 'error', 'message': 'ไม่พบข้อมูลผู้ใช้ในระบบ'}), 404
+        
+        user = users[0]
+        current_credit = float(user['credit_balance'])
+
+        # 2. ค้นหาสินค้า
         get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&status=eq.available&limit=1"
         res = requests.get(get_url, headers=headers)
         res.raise_for_status()
@@ -66,7 +77,13 @@ def buy_product():
             
         target_product = products[0]
         product_id = target_product['id']
+        price = float(target_product['price'])
+
+        # 3. ตรวจสอบว่าเงินพอซื้อหรือไม่
+        if current_credit < price:
+            return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
+        # 4. พยายามจองรหัสนี้ (ป้องกันคนแย่งกัน)
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{product_id}&status=eq.available"
         update_data = {"status": "sold"}
         
@@ -75,9 +92,14 @@ def buy_product():
         updated_rows = update_res.json()
         
         if not updated_rows:
-            return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาด สินค้าถูกซื้อไปแล้ว กรุณาลองใหม่'}), 409
+            return jsonify({'status': 'error', 'message': 'ซื้อไม่ทัน สินค้าถูกซื้อไปแล้ว กรุณาลองใหม่'}), 409
             
         purchased_account = updated_rows[0]
+
+        # 5. หักเครดิตผู้ใช้เมื่อดึงรหัสสินค้าสำเร็จ
+        new_credit = current_credit - price
+        update_user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
+        requests.patch(update_user_url, headers=headers, json={"credit_balance": new_credit})
         
         receipt = {
             "platform": purchased_account['platform'],
@@ -88,11 +110,15 @@ def buy_product():
             "expire_date": purchased_account['expire_date']
         }
         
-        return jsonify({'status': 'success', 'data': receipt})
+        return jsonify({
+            'status': 'success', 
+            'data': receipt,
+            'remaining_credit': new_credit
+        })
         
     except requests.exceptions.RequestException as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
+    
 @app.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     if request.method == 'OPTIONS': 
