@@ -8,12 +8,14 @@
 </head>
 <body>
 
-    <nav class="navbar">
+        <nav class="navbar">
         <div class="brand">
-            <img src="EAA8607F-0D59-4525-A5EE-4E9736CABD0A.png" alt="Deuxmoon Logo" style="height: 95px; border-radius: 3px; cursor: pointer;" onclick="window.location.href='index.html'">
+            <img src="EAA8607F-0D59-4525-A5EE-4E9736CABD0A.png" alt="Deuxmoon Logo" style="height: 95px; border-radius: 8px; cursor: pointer;" onclick="window.location.href='index.html'">
         </div>
         
         <div class="user-menu" id="menu-guest">
+            <button class="btn-buy btn-netflix" style="padding: 8px 16px; width: auto;" onclick="openAuthModal()">เข้าสู่ระบบ</button>
+        </div>
 
         <div class="user-menu" id="menu-logged-in" style="display: none;">
             <span id="display-email" style="font-size: 14px; color: var(--text-muted);"></span>
