@@ -23,7 +23,6 @@
             <button class="btn-topup" onclick="toggleTopup()">เติมเงิน</button>
             
             <button class="btn-topup" style="background: var(--netflix-btn);" onclick="window.location.href='history.html'">ประวัติ</button>
-            
             <button class="btn-buy" style="background: #333; padding: 8px 16px; width: auto;" onclick="logout()">ออก</button>
         </div>
     </nav>
@@ -44,18 +43,27 @@
         <button class="btn-buy btn-disabled" style="width: 100%; margin-top: 10px;" onclick="toggleTopup()">ยกเลิก</button>
     </div>
 
-    <div id="auth-modal" class="modal-overlay" style="display: none;">
+   <div id="auth-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="text-align: center;">
             <h3 class="modal-title" id="auth-title">เข้าสู่ระบบ</h3>
-            <input type="email" id="auth-email" placeholder="อีเมล" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box;">
-            <input type="password" id="auth-password" placeholder="รหัสผ่าน" style="width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box;">
+            
+            <input type="email" id="auth-email" placeholder="username" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box;">
+            <input type="password" id="auth-password" placeholder="รหัสผ่าน" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box;">
+            
+            <input type="text" id="auth-pin" placeholder="รหัส PIN 4 หลัก" maxlength="4" style="width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box; display: none;">
             
             <button class="btn-buy btn-disney" id="btn-login" onclick="login()">เข้าสู่ระบบ</button>
             <button class="btn-buy btn-netflix" id="btn-register" onclick="register()" style="display: none;">ยืนยันสมัครสมาชิก</button>
+            <button class="btn-buy" id="btn-reset" onclick="resetPassword()" style="display: none; background: #e67e22;">รีเซ็ตรหัสผ่านใหม่</button>
             
             <div style="margin-top: 15px; font-size: 14px; color: var(--text-muted); cursor: pointer;" onclick="toggleAuthMode()">
                 <span id="auth-switch-text">ยังไม่มีบัญชี? กดที่นี่เพื่อสมัครสมาชิก</span>
             </div>
+            
+            <div style="margin-top: 10px; font-size: 14px; color: #ffb74d; cursor: pointer;" id="forgot-password-text" onclick="toggleResetMode()">
+                ลืมรหัสผ่าน?
+            </div>
+            
             <button class="btn-buy" style="background: transparent; border: 1px solid #555; margin-top: 15px;" onclick="closeAuthModal()">ยกเลิก</button>
         </div>
     </div>
@@ -70,5 +78,7 @@
     </div>
 
     <script src="script.js"></script>
+
+    
 </body>
 </html>

@@ -148,7 +148,10 @@
             document.getElementById('display-email').innerText = user.email;
 
             try {
-                const response = await fetch(`${API_URL}/history?user_id=${user.id}`);
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/history`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const result = await response.json();
 
                 list.innerHTML = ''; 
