@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* จัดรูปแบบตารางให้เข้ากับธีมกล่องสินค้าของคุณ */
         .history-wrapper {
             background-color: var(--dark-glass);
             backdrop-filter: blur(12px);
@@ -21,7 +20,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 800px;
         }
         th, td {
             padding: 15px;
@@ -37,7 +36,6 @@
             background-color: rgba(255, 255, 255, 0.05);
         }
         
-        /* ปุ่มคัดลอก */
         .copy-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid var(--dark-border);
@@ -50,7 +48,7 @@
             transition: 0.3s;
         }
         .copy-btn:hover {
-            background: var(--disney-btn);
+            background: var(--netflix-btn);
         }
     </style>
 </head>
@@ -78,11 +76,12 @@
                         <th>รหัสผ่าน</th>
                         <th>โปรไฟล์ (PIN)</th>
                         <th>วันหมดอายุ</th>
+                        <th style="text-align: center;">จัดการ</th>
                     </tr>
                 </thead>
                 <tbody id="history-list">
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
                             กำลังโหลดข้อมูล...
                         </td>
                     </tr>
@@ -94,7 +93,7 @@
     <script>
         const API_URL = "https://deuxmoon-api.onrender.com";
 
-        // ฟังก์ชันระบบกดปุ่ม Copy
+        // คัดลอกทีละส่วน
         function copyText(text, btnElement) {
             navigator.clipboard.writeText(text).then(() => {
                 const originalText = btnElement.innerText;
@@ -102,11 +101,35 @@
                 btnElement.style.background = '#00ff88';
                 btnElement.style.color = '#000';
                 
-                // คืนค่าปุ่มกลับเป็นเหมือนเดิมหลังผ่านไป 2 วินาที
                 setTimeout(() => {
                     btnElement.innerText = originalText;
                     btnElement.style.background = 'rgba(255,255,255,0.1)';
                     btnElement.style.color = 'var(--text-light)';
+                }, 2000);
+            });
+        }
+
+        // คัดลอกแบบจัดเต็ม (ข้อมูล + กฎการใช้งาน)
+        function copyFullData(btnElement, platform, login, password, profile, pin, expire) {
+            const rulesText = `กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- \n\nทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\nไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\nไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n1 จอ = รับชมทีละ 1 อุปกรณ์\nถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี\nหากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n\n=- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
+            
+            let fullText = `แพลตฟอร์ม: ${platform}\n`;
+            fullText += `บัญชี (ล็อกอิน): ${login}\n`;
+            fullText += `รหัสผ่าน: ${password}\n`;
+            fullText += `เข้าใช้งานจอ: ${profile} ${pin ? '(PIN: ' + pin + ')' : ''}\n`;
+            fullText += `วันหมดอายุ: ${expire}\n\n`;
+            fullText += rulesText;
+
+            navigator.clipboard.writeText(fullText).then(() => {
+                const originalText = btnElement.innerText;
+                btnElement.innerText = 'คัดลอกสำเร็จ!';
+                btnElement.style.background = '#00ff88';
+                btnElement.style.color = '#000';
+                
+                setTimeout(() => {
+                    btnElement.innerText = originalText;
+                    btnElement.style.background = 'var(--disney-btn)';
+                    btnElement.style.color = 'white';
                 }, 2000);
             });
         }
@@ -132,7 +155,7 @@
 
                 if (result.status === 'success') {
                     if (result.data.length === 0) {
-                        list.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">ยังไม่มีประวัติการซื้อสินค้า</td></tr>';
+                        list.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">ยังไม่มีประวัติการซื้อสินค้า</td></tr>';
                         return;
                     }
 
@@ -161,15 +184,21 @@
                                 </td>
                                 <td>${profileStr} ${pinStr}</td>
                                 <td>${item.expire_date ? item.expire_date : '-'}</td>
+                                <td style="text-align: center;">
+                                    <button class="copy-btn" style="background: var(--disney-btn); color: white; padding: 8px 12px; font-weight: bold; margin-left: 0;" 
+                                    onclick="copyFullData(this, '${platformName}', '${item.account_login}', '${item.account_password}', '${item.profile_name || '-'}', '${item.pin_code || ''}', '${item.expire_date || '-'}')">
+                                        คัดลอกทั้งหมด
+                                    </button>
+                                </td>
                             </tr>
                         `;
                     });
                 } else {
-                    list.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ffb3b3; padding: 30px;">โหลดประวัติไม่สำเร็จ: ${result.message}</td></tr>`;
+                    list.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ffb3b3; padding: 30px;">โหลดประวัติไม่สำเร็จ: ${result.message}</td></tr>`;
                 }
             } catch (error) {
                 console.error("Error loading history:", error);
-                list.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ffb3b3; padding: 30px;">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</td></tr>';
+                list.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ffb3b3; padding: 30px;">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</td></tr>';
             }
         }
 

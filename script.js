@@ -53,7 +53,7 @@ function renderProducts(products) {
         return;
     }
 
-    // จัดกลุ่มสินค้าด้วย คีย์ผสม (เช่น netflix_1, netflix_7, netflix_30)
+    // จัดกลุ่มสินค้า
     const groupedProducts = {};
     products.forEach(p => {
         const key = `${p.platform}_${p.duration_days}`;
@@ -121,7 +121,7 @@ async function buyProduct(platform, duration_days, price) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 platform: platform,
-                duration_days: duration_days, // ส่งจำนวนวันไปบอกหลังบ้าน
+                duration_days: duration_days,
                 user_id: user.id 
             })
         });
@@ -142,6 +142,18 @@ async function buyProduct(platform, duration_days, price) {
             receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile}</span></div>`;
             if (data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin}</span></div>`;
             receiptHtml += `<div>วันหมดอายุ: <span>${data.expire_date}</span></div>
+                
+                <div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">
+                    <strong style="color: #ff8080;">กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.-</strong><br><br>
+                    - ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที<br>
+                    - ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด<br>
+                    - ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น<br>
+                    - 1 จอ = รับชมทีละ 1 อุปกรณ์<br>
+                    - ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี<br>
+                    - หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน<br><br>
+                    <span style="color: #ffb74d;">=- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด</span>
+                </div>
+                
                 <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
                 <div style="text-align: center; font-size: 14px; color: var(--text-muted);">กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ</div>
             `;
@@ -212,7 +224,6 @@ function checkLoginStatus() {
     }
 }
 
-// เริ่มต้นทำงานเมื่อเปิดหน้าเว็บ
 window.onload = () => {
     checkLoginStatus();
     fetchProducts();
