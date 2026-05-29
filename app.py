@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
 import requests
-import base64
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -214,34 +213,25 @@ def topup_credit():
     }
 
     try:
-        # กระบวนการแปลงรูปภาพเป็นข้อความ Base64
-        base64_str = base64.b64encode(file_bytes).decode('utf-8')
-        mime_type = slip_file.mimetype or 'image/jpeg'
-        image_base64 = f"data:{mime_type};base64,{base64_str}"
+        slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
+        headers_slip2go = {'Authorization': f'Bearer {slip2go_secret}'}
+        
+        # แนบเฉพาะไฟล์รูปภาพตามมาตรฐาน Form-data
+        files = {'file': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
+        
+        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
 
-        # ใช้ URL สำหรับ Base64 ตามที่แคปมา
-        slip2go_url = "https://slip2go.com/api/verify-slip/qr-base64/info"
-        
-        # คราวนี้ส่งเป็น Content-Type: application/json
-        headers_slip2go = {
-            'Authorization': f'Bearer {slip2go_secret}',
-            'Content-Type': 'application/json'
-        }
-        
-        # จัดโครงสร้างข้อมูลให้ตรงกับตารางเป๊ะๆ
-        payload_data = {
-            "payload": {
-                "imageBase64": image_base64
-            }
-        }
-        
-        # ส่งข้อมูลผ่าน json=payload_data แทนการแนบไฟล์
-        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, json=payload_data)
+        # พิมพ์ Log เข้า Render Console เพื่อใช้ Debug
+        print(f"--- Slip2Go Status: {slip2go_res.status_code} ---")
+        print(f"--- Slip2Go Response: {slip2go_res.text[:500]} ---")
+
+        if slip2go_res.status_code == 500:
+            return jsonify({'status': 'error', 'message': 'เซิร์ฟเวอร์ Slip2Go ล่ม (500) อาจเกิดจากขนาดไฟล์ใหญ่เกินไป กรุณาลองลดขนาดภาพ'}), 400
 
         try:
             slip2go_data = slip2go_res.json()
         except ValueError:
-            return jsonify({'status': 'error', 'message': f'ระบบ Slip2Go ขัดข้อง ({slip2go_res.status_code}): {slip2go_res.text[:100]}' }), 400
+            return jsonify({'status': 'error', 'message': f'ระบบ Slip2Go ขัดข้อง โค้ด {slip2go_res.status_code}' }), 400
 
         if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
             err_msg = slip2go_data.get('message', 'สลิปไม่ถูกต้อง หรือไม่สามารถอ่าน QR Code ได้')
@@ -255,13 +245,11 @@ def topup_credit():
         if not trans_ref or amount <= 0:
             return jsonify({'status': 'error', 'message': 'ข้อมูลในสลิปไม่ครบถ้วน'}), 400
 
-        # เช็คสลิปซ้ำในฐานข้อมูลของเรา
         check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
         check_res = requests.get(check_url, headers=headers_supabase)
         if check_res.json():
             return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
 
-        # ดึงกระเป๋าเงินลูกค้า
         user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         user_res = requests.get(user_url, headers=headers_supabase)
         users = user_res.json()
@@ -270,11 +258,9 @@ def topup_credit():
             
         current_credit = float(users[0]['credit_balance'])
 
-        # บันทึกประวัติเพื่อป้องกันการใช้ซ้ำ
         tx_payload = {"user_id": user_id, "amount": amount, "sending_bank": sending_bank, "trans_ref": trans_ref}
         requests.post(f"{supabase_url}/rest/v1/topup_transactions", headers=headers_supabase, json=tx_payload).raise_for_status()
 
-        # บวกเงินเข้ากระเป๋า
         new_credit = current_credit + amount
         requests.patch(user_url, headers=headers_supabase, json={"credit_balance": new_credit}).raise_for_status()
 
