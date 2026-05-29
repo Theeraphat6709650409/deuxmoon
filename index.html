@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deuxmoon Store</title>
+    <style>
+        :root {
+            --disney-btn: #0072d2;
+            --netflix-btn: #e50914;
+            --dark-glass: rgba(25, 10, 45, 0.75);
+            --dark-border: rgba(255, 255, 255, 0.15);
+            --text-light: #ffffff;
+            --text-muted: #d0c5e3;
+            --bg-color: #1a0b2e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            /* นำลิงก์รูปภาพพื้นหลังธีมฮาโลวีนของคุณมาใส่ตรงนี้ */
+            background-image: url('YOUR_BACKGROUND_IMAGE_URL'); 
+            background-color: var(--bg-color);
+            background-size: cover;
+            background-position: center top; 
+            background-attachment: fixed;
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* --- Navigation Bar --- */
+        .navbar {
+            background-color: rgba(15, 5, 30, 0.9);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--dark-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffb74d;
+            letter-spacing: 2px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .wallet-badge {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .wallet-amount {
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .btn-topup {
+            background-color: var(--disney-btn);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-topup:hover {
+            background-color: #005bb5;
+        }
+
+        /* --- Main Container --- */
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        /* --- Product Grid --- */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background-color: var(--dark-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--dark-border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .product-logo {
+            height: 60px;
+            margin-bottom: 15px;
+            object-fit: contain;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            font-size: 24px;
+            color: #ffb74d;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .btn-buy {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .btn-netflix { background-color: var(--netflix-btn); }
+        .btn-netflix:hover { background-color: #b20710; }
+        
+        .btn-disney { background-color: var(--disney-btn); }
+        .btn-disney:hover { background-color: #005bb5; }
+
+        .btn-disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        /* --- Top-up Section (ซ่อนไว้เป็น Modal สำหรับอนาคต) --- */
+        .topup-modal {
+            display: none;
+            background-color: var(--dark-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--dark-border);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            margin: 40px auto;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand">Deuxmoon</div>
+        <div class="user-menu">
+            <div class="wallet-badge">
+                เครดิต: <span class="wallet-amount" id="credit-display">0.00</span> THB
+            </div>
+            <button class="btn-topup" onclick="toggleTopup()">เติมเงิน</button>
+        </div>
+    </nav>
+
+    <div class="container" id="store-section">
+        <h2 class="section-title">เลือกซื้อแพ็กเกจ</h2>
+        <div class="product-grid" id="product-container">
+            <p style="text-align: center; width: 100%;">กำลังโหลดข้อมูลสินค้า...</p>
+        </div>
+    </div>
+
+    <div class="container topup-modal" id="topup-section">
+        <h2>ระบบเติมเงินอัตโนมัติ</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">สแกน QR Code เพื่อเติมเครดิต</p>
+        <div style="width: 200px; height: 200px; background-color: white; margin: 0 auto 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: black;">
+            QR Code พื้นที่จำลอง
+        </div>
+        <input type="file" id="slip-upload" style="margin-bottom: 15px; width: 100%;">
+        <button class="btn-buy btn-disney" style="width: 100%;">ตรวจสอบสลิป</button>
+        <button class="btn-buy btn-disabled" style="width: 100%; margin-top: 10px;" onclick="toggleTopup()">ยกเลิก</button>
+    </div>
+
+    <script>
+        // กำหนด URL ของ API ที่เรารันไว้บน Render
+        // แก้ไขให้ตรงกับโดเมนจริงของคุณหากชื่อต่างไปจากนี้
+        const API_URL = "https://deuxmoon-api.onrender.com";
+
+        // ฟังก์ชันสลับหน้าต่างระหว่างร้านค้ากับระบบเติมเงิน
+        function toggleTopup() {
+            const store = document.getElementById('store-section');
+            const topup = document.getElementById('topup-section');
+            
+            if (store.style.display === 'none') {
+                store.style.display = 'block';
+                topup.style.display = 'none';
+            } else {
+                store.style.display = 'none';
+                topup.style.display = 'block';
+            }
+        }
+
+        // ฟังก์ชันดึงข้อมูลสินค้าจาก Backend
+        async function fetchProducts() {
+            const container = document.getElementById('product-container');
+            
+            try {
+                const response = await fetch(`${API_URL}/check-products`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    renderProducts(result.data);
+                } else {
+                    container.innerHTML = `<p style="color: #ffb3b3;">เกิดข้อผิดพลาด: ${result.message}</p>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<p style="color: #ffb3b3;">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่ภายหลัง</p>`;
+                console.error("API Error:", error);
+            }
+        }
+
+        // ฟังก์ชันสร้างกล่องสินค้า (UI)
+        function renderProducts(products) {
+            const container = document.getElementById('product-container');
+            container.innerHTML = '';
+
+            if (products.length === 0) {
+                container.innerHTML = '<p style="text-align: center; width: 100%;">ขณะนี้สินค้าหมดชั่วคราว</p>';
+                return;
+            }
+
+            // แยกและจัดกลุ่มสินค้า (เพื่อให้หน้าเว็บแสดงแค่ Netflix 1 กล่อง และ Disney 1 กล่อง แทนที่จะแสดงทุก PIN)
+            const groupedProducts = {};
+            products.forEach(p => {
+                if (!groupedProducts[p.platform]) {
+                    groupedProducts[p.platform] = {
+                        platform: p.platform,
+                        price: p.price,
+                        count: 1
+                    };
+                } else {
+                    groupedProducts[p.platform].count++;
+                }
+            });
+
+            // สร้าง HTML สำหรับแต่ละแพลตฟอร์ม
+            Object.values(groupedProducts).forEach(product => {
+                let logoSrc, btnClass;
+                if (product.platform.toLowerCase() === 'netflix') {
+                    logoSrc = "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg";
+                    btnClass = "btn-netflix";
+                } else {
+                    logoSrc = "https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg";
+                    btnClass = "btn-disney";
+                }
+
+                const cardHtml = `
+                    <div class="product-card">
+                        <img src="${logoSrc}" alt="${product.platform}" class="product-logo">
+                        <div class="product-name">รหัสเข้าใช้งาน ${product.platform.toUpperCase()}</div>
+                        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">
+                            มีสินค้าพร้อมส่ง: ${product.count} รายการ
+                        </div>
+                        <div class="product-price">${product.price} THB</div>
+                        <button class="btn-buy ${btnClass}" onclick="buyProduct('${product.platform}', ${product.price})">
+                            ซื้อเลย
+                        </button>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        // ฟังก์ชันจำลองการกดซื้อ
+        function buyProduct(platform, price) {
+            alert(`คุณกำลังจะซื้อแพ็กเกจ ${platform} ในราคา ${price} บาท\n(ฟังก์ชันตัดเงินและรับรหัสจะถูกเพิ่มในภายหลัง)`);
+        }
+
+        // สั่งให้ดึงข้อมูลสินค้าทันทีเมื่อเปิดหน้าเว็บ
+        window.onload = fetchProducts;
+
+        // ฟังก์ชันสั่งซื้อสินค้า
+        async function buyProduct(platform, price) {
+            // (ในอนาคตจะเพิ่มการเช็คเครดิตกระเป๋าเงินตรงนี้ก่อน)
+            
+            const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${platform.toUpperCase()} ในราคา ${price} บาท หรือไม่?`);
+            if (!confirmBuy) return;
+
+            try {
+                // ส่งคำสั่งซื้อไปที่ Backend
+                const response = await fetch(`${API_URL}/buy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ platform: platform })
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const data = result.data;
+                    
+                    // ปั้นข้อความใบเสร็จรับเงิน
+                    let receiptMsg = `สั่งซื้อสำเร็จ!\n\n`;
+                    receiptMsg += `แพลตฟอร์ม: ${data.platform.toUpperCase()}\n`;
+                    receiptMsg += `บัญชี (ล็อกอิน): ${data.login}\n`;
+                    if (data.password) receiptMsg += `รหัสผ่าน: ${data.password}\n`;
+                    receiptMsg += `เข้าใช้งานจอ: ${data.profile}\n`;
+                    if (data.pin) receiptMsg += `รหัสเข้าจอ (PIN): ${data.pin}\n`;
+                    receiptMsg += `วันหมดอายุ: ${data.expire_date}\n\n`;
+                    receiptMsg += `กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ`;
+                    
+                    alert(receiptMsg);
+                    
+                    // รีเฟรชข้อมูลสินค้าบนหน้าเว็บใหม่ (ตัวเลขจำนวนสินค้าจะลดลง)
+                    fetchProducts(); 
+                } else {
+                    alert(`ไม่สามารถซื้อได้: ${result.message}`);
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+            }
+        }
+    </script>
+</body>
+</html> 
