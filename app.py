@@ -5,7 +5,6 @@ import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-# บังคับเปิด CORS ให้ครอบคลุมทุกเส้นทางและทุก Method
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['GET'])
@@ -58,7 +57,6 @@ def buy_product():
     }
 
     try:
-        # 1. เช็คยอดเงินผู้ใช้
         user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{user_id}", headers=headers)
         users = user_res.json()
         if not users:
@@ -67,7 +65,6 @@ def buy_product():
         user = users[0]
         current_credit = float(user['credit_balance'])
 
-        # 2. ค้นหาสินค้า
         get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&limit=1"
         res = requests.get(get_url, headers=headers)
         res.raise_for_status()
@@ -80,11 +77,9 @@ def buy_product():
         product_id = target_product['id']
         price = float(target_product['price'])
 
-        # 3. ตรวจสอบยอดเงิน
         if current_credit < price:
             return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
-        # 4. จองรหัส
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{product_id}&status=eq.available"
         update_data = {"status": "sold"}
         
@@ -97,7 +92,6 @@ def buy_product():
             
         purchased_account = updated_rows[0]
 
-        # 5. หักเครดิต
         new_credit = current_credit - price
         update_user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         requests.patch(update_user_url, headers=headers, json={"credit_balance": new_credit})
@@ -199,7 +193,6 @@ def topup_credit():
     if 'slip' not in request.files or not user_id:
         return jsonify({'status': 'error', 'message': 'ข้อมูลไม่ครบถ้วน'}), 400
 
-    # ดึงไฟล์และแปลงเป็นข้อมูลไบต์ เพื่อป้องกันข้อผิดพลาดตอนส่งข้อมูล
     slip_file = request.files['slip']
     file_bytes = slip_file.read()
     
@@ -224,14 +217,19 @@ def topup_credit():
         slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
         headers_slip2go = {'Authorization': f'Bearer {slip2go_secret}'}
         
-        # ส่งเฉพาะไฟล์ และระบุคีย์ 'file' ตามคู่มือของระบบ
+        # จัดเตรียมไฟล์รูปภาพ
         files = {'file': (slip_file.filename, file_bytes, slip_file.mimetype)}
-        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
+        
+        # เพิ่มข้อมูล payload เปล่าๆ เข้าไป เพื่อป้องกันเซิร์ฟเวอร์ Slip2Go แครช (จุดที่แก้ไขในรอบนี้)
+        payload_data = {'payload': '{"checkDuplicate": false}'}
+        
+        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files, data=payload_data)
 
         try:
             slip2go_data = slip2go_res.json()
         except ValueError:
-            return jsonify({'status': 'error', 'message': f'เซิร์ฟเวอร์ Slip2Go ขัดข้อง ({slip2go_res.status_code})'}), 400
+            # หากเซิร์ฟเวอร์แครชอีก จะแสดงข้อความ Response ตอบกลับมาด้วยเพื่อหาสาเหตุที่แท้จริง
+            return jsonify({'status': 'error', 'message': f'เซิร์ฟเวอร์ Slip2Go ขัดข้อง ({slip2go_res.status_code}): {slip2go_res.text[:100]}' }), 400
 
         if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
             err_msg = slip2go_data.get('message', 'สลิปไม่ถูกต้อง หรือไม่สามารถอ่าน QR Code ได้')
