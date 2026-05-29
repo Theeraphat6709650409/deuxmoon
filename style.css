@@ -219,3 +219,62 @@ body {
     color: #ffb74d;
     font-weight: bold;
 }
+
+/* =========================================
+   📱 โค้ด Responsive จัดหน้าตาสำหรับมือถือ
+   ========================================= */
+@media (max-width: 768px) {
+    /* 1. จัดระเบียบ Navbar ให้เรียงเป็นแนวตั้ง */
+    .navbar {
+        flex-direction: column;
+        padding: 15px 10px;
+        gap: 15px;
+    }
+    
+    /* ย่อโลโก้ลงนิดหน่อยให้สมส่วนกับมือถือ */
+    .brand img {
+        height: 60px !important; 
+    }
+
+    /* เมนูด้านบน (ปุ่มเติมเงิน, ล็อกอิน) ให้ตัดขึ้นบรรทัดใหม่ได้ */
+    .user-menu {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    /* 2. จัดการกล่องสินค้าให้เรียงเป็นแถวเดียวตรงกลาง */
+    #product-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .product-card {
+        width: 90%;
+        max-width: 340px;
+        margin: 0 auto;
+    }
+
+    /* 3. จัดการหน้าต่าง Pop-up (ล็อกอิน / ใบเสร็จ) ให้ไม่ล้นจอ */
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    
+    /* ขยายปุ่มต่างๆ ให้กดง่ายขึ้นด้วยนิ้วมือ */
+    button {
+        padding: 12px;
+        font-size: 16px;
+        width: 100%; /* บังคับให้ปุ่มกางเต็มกล่อง */
+    }
+
+    /* ปุ่มเมนูด้านบนไม่ต้องกางเต็มกล่อง */
+    .navbar button {
+        width: auto;
+    }
+}
