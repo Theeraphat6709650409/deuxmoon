@@ -35,11 +35,9 @@
     <div class="container topup-modal" id="topup-section">
         <h2>ระบบเติมเงินอัตโนมัติ</h2>
         <p style="color: var(--text-muted); margin-bottom: 20px;">สแกน QR Code เพื่อเติมเครดิต</p>
-        <div style="width: 200px; height: 200px; background-color: white; margin: 0 auto 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: black;">
-            QR Code พื้นที่จำลอง
-        </div>
+        <img src="my-qr.jpg" alt="QR Code รับเงิน" style="width: 200px; height: 200px; margin: 0 auto 20px; border-radius: 10px; display: block; object-fit: cover;">
         <input type="file" id="slip-upload" style="margin-bottom: 15px; width: 100%;">
-        <button class="btn-buy btn-disney" style="width: 100%;">ตรวจสอบสลิป</button>
+        <button class="btn-buy btn-disney" style="width: 100%;" onclick="uploadSlip()">ตรวจสอบสลิป</button>
         <button class="btn-buy btn-disabled" style="width: 100%; margin-top: 10px;" onclick="toggleTopup()">ยกเลิก</button>
     </div>
 
