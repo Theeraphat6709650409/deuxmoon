@@ -2,9 +2,10 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
 import requests
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-# บังคับเปิด CORS ให้ครอบคลุมทุกเส้นทางและทุก Method อย่างเด็ดขาด
+# เปิด CORS ให้รองรับทุกคำขอ
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['GET'])
@@ -35,11 +36,9 @@ def check_products():
 
 @app.route('/buy', methods=['POST', 'OPTIONS'])
 def buy_product():
-    # 1. จัดการกับคำขอ Preflight ของระบบ CORS
     if request.method == 'OPTIONS':
         return '', 200
 
-    # 2. เริ่มขั้นตอนรับคำสั่งซื้อ
     data = request.json
     platform = data.get('platform')
 
@@ -92,6 +91,76 @@ def buy_product():
         return jsonify({'status': 'success', 'data': receipt})
         
     except requests.exceptions.RequestException as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/register', methods=['POST', 'OPTIONS'])
+def register():
+    if request.method == 'OPTIONS': 
+        return '', 200
+    
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'กรุณากรอกอีเมลและรหัสผ่าน'}), 400
+
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {
+        "apikey": supabase_key, "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json", "Prefer": "return=representation"
+    }
+
+    try:
+        check_res = requests.get(f"{supabase_url}/rest/v1/users?email=eq.{email}", headers=headers)
+        if check_res.json():
+            return jsonify({'status': 'error', 'message': 'อีเมลนี้ถูกใช้งานแล้ว'}), 409
+
+        hashed_password = generate_password_hash(password)
+        payload = {"email": email, "password_hash": hashed_password}
+        
+        insert_res = requests.post(f"{supabase_url}/rest/v1/users", headers=headers, json=payload)
+        insert_res.raise_for_status()
+        
+        return jsonify({'status': 'success', 'message': 'สมัครสมาชิกสำเร็จ'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/login', methods=['POST', 'OPTIONS'])
+def login():
+    if request.method == 'OPTIONS': 
+        return '', 200
+    
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {
+        "apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"
+    }
+
+    try:
+        res = requests.get(f"{supabase_url}/rest/v1/users?email=eq.{email}", headers=headers)
+        users = res.json()
+        
+        if not users:
+            return jsonify({'status': 'error', 'message': 'ไม่พบอีเมลนี้ในระบบ'}), 404
+            
+        user = users[0]
+        
+        if check_password_hash(user['password_hash'], password):
+            user_data = {
+                "id": user['id'],
+                "email": user['email'],
+                "credit_balance": user['credit_balance']
+            }
+            return jsonify({'status': 'success', 'data': user_data})
+        else:
+            return jsonify({'status': 'error', 'message': 'รหัสผ่านไม่ถูกต้อง'}), 401
+    except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
