@@ -173,6 +173,58 @@
             margin: 40px auto;
             text-align: center;
         }
+        /* --- Receipt Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--dark-glass);
+            border: 1px solid var(--dark-border);
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-title {
+            color: #00ff88;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .receipt-details {
+            text-align: left;
+            background-color: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .receipt-details span {
+            color: #ffb74d;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -303,15 +355,17 @@
         // สั่งให้ดึงข้อมูลสินค้าทันทีเมื่อเปิดหน้าเว็บ
         window.onload = fetchProducts;
 
-        // ฟังก์ชันสั่งซื้อสินค้า
+        // เพิ่มฟังก์ชันปิดหน้าต่าง Pop-up (วางไว้ตรงไหนก็ได้ใน <script>)
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').style.display = 'none';
+        }
+
+        // แก้ไขฟังก์ชันสั่งซื้อสินค้า (แทนที่ของเดิมทั้งหมด)
         async function buyProduct(platform, price) {
-            // (ในอนาคตจะเพิ่มการเช็คเครดิตกระเป๋าเงินตรงนี้ก่อน)
-            
             const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${platform.toUpperCase()} ในราคา ${price} บาท หรือไม่?`);
             if (!confirmBuy) return;
 
             try {
-                // ส่งคำสั่งซื้อไปที่ Backend
                 const response = await fetch(`${API_URL}/buy`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -322,19 +376,23 @@
                 if (result.status === 'success') {
                     const data = result.data;
                     
-                    // ปั้นข้อความใบเสร็จรับเงิน
-                    let receiptMsg = `สั่งซื้อสำเร็จ!\n\n`;
-                    receiptMsg += `แพลตฟอร์ม: ${data.platform.toUpperCase()}\n`;
-                    receiptMsg += `บัญชี (ล็อกอิน): ${data.login}\n`;
-                    if (data.password) receiptMsg += `รหัสผ่าน: ${data.password}\n`;
-                    receiptMsg += `เข้าใช้งานจอ: ${data.profile}\n`;
-                    if (data.pin) receiptMsg += `รหัสเข้าจอ (PIN): ${data.pin}\n`;
-                    receiptMsg += `วันหมดอายุ: ${data.expire_date}\n\n`;
-                    receiptMsg += `กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ`;
+                    // ปั้นข้อมูล HTML สำหรับใส่ใน Pop-up
+                    let receiptHtml = `
+                        <div>แพลตฟอร์ม: <span>${data.platform.toUpperCase()}</span></div>
+                        <div>บัญชี (ล็อกอิน): <span>${data.login}</span></div>
+                    `;
+                    if (data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.password}</span></div>`;
+                    receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile}</span></div>`;
+                    if (data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin}</span></div>`;
+                    receiptHtml += `<div>วันหมดอายุ: <span>${data.expire_date}</span></div>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                        <div style="text-align: center; font-size: 14px; color: var(--text-muted);">กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ</div>
+                    `;
                     
-                    alert(receiptMsg);
+                    // นำข้อมูลไปใส่ในโครงสร้างและสั่งให้ Pop-up แสดงขึ้นมา
+                    document.getElementById('receipt-details').innerHTML = receiptHtml;
+                    document.getElementById('receipt-modal').style.display = 'flex';
                     
-                    // รีเฟรชข้อมูลสินค้าบนหน้าเว็บใหม่ (ตัวเลขจำนวนสินค้าจะลดลง)
                     fetchProducts(); 
                 } else {
                     alert(`ไม่สามารถซื้อได้: ${result.message}`);
