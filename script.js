@@ -1,5 +1,5 @@
 const API_URL = "https://deuxmoon-api.onrender.com";
-let authMode = 'login'; // 'login', 'register', 'reset'
+let authMode = 'login'; 
 
 function toggleTopup() {
     const store = document.getElementById('store-section');
@@ -29,7 +29,6 @@ function toggleResetMode() {
     updateAuthUI();
 }
 
-// ควบคุมหน้าต่าง UI
 function updateAuthUI() {
     const title = document.getElementById('auth-title');
     const btnLogin = document.getElementById('btn-login');
@@ -38,7 +37,7 @@ function updateAuthUI() {
     const switchText = document.getElementById('auth-switch-text');
     const forgotText = document.getElementById('forgot-password-text');
     const passInput = document.getElementById('auth-password');
-    const pinInput = document.getElementById('auth-pin'); // ดึงกล่อง PIN มาใช้
+    const pinInput = document.getElementById('auth-pin'); 
 
     if (authMode === 'login') {
         title.innerText = 'เข้าสู่ระบบ';
@@ -46,14 +45,14 @@ function updateAuthUI() {
         switchText.innerText = 'ยังไม่มีบัญชี? กดที่นี่เพื่อสมัครสมาชิก';
         forgotText.style.display = 'block';
         passInput.placeholder = 'รหัสผ่าน';
-        pinInput.style.display = 'none'; // ซ่อน PIN
+        pinInput.style.display = 'none'; 
     } else if (authMode === 'register') {
         title.innerText = 'สมัครสมาชิก';
         btnLogin.style.display = 'none'; btnRegister.style.display = 'block'; btnReset.style.display = 'none';
         switchText.innerText = 'มีบัญชีแล้ว? กดที่นี่เพื่อเข้าสู่ระบบ';
         forgotText.style.display = 'none';
         passInput.placeholder = 'ตั้งรหัสผ่าน';
-        pinInput.style.display = 'block'; // โชว์ PIN
+        pinInput.style.display = 'block'; 
         pinInput.placeholder = 'ตั้งรหัส PIN 4 หลัก (ใช้ตอนลืมรหัสผ่าน)';
     } else if (authMode === 'reset') {
         title.innerText = 'รีเซ็ตรหัสผ่าน';
@@ -61,7 +60,7 @@ function updateAuthUI() {
         switchText.innerText = 'กลับไปหน้าเข้าสู่ระบบ';
         forgotText.style.display = 'none';
         passInput.placeholder = 'ตั้งรหัสผ่านใหม่';
-        pinInput.style.display = 'block'; // โชว์ PIN
+        pinInput.style.display = 'block'; 
         pinInput.placeholder = 'กรอกรหัส PIN 4 หลักเพื่อยืนยัน';
     }
 }
@@ -100,27 +99,43 @@ function renderProducts(products) {
     });
 
     Object.values(groupedProducts).forEach(product => {
-        let logoSrc, btnClass;
-        if (product.platform.toLowerCase() === 'netflix') {
-            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg"; btnClass = "btn-netflix";
+        let logoSrc, btnClass, displayName;
+        const pPlatform = product.platform.toLowerCase();
+
+        // เช็คแพลตฟอร์มเพื่อแสดงชื่อให้ถูกต้อง
+        if (pPlatform === 'netflix_mobile') {
+            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg";
+            btnClass = "btn-netflix";
+            displayName = "NETFLIX (มือถือ)";
+        } else if (pPlatform === 'netflix_tv') {
+            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg";
+            btnClass = "btn-netflix";
+            displayName = "NETFLIX (ทีวี)";
+        } else if (pPlatform === 'netflix') { 
+            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg";
+            btnClass = "btn-netflix";
+            displayName = "NETFLIX";
         } else {
-            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg"; btnClass = "btn-disney";
+            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg";
+            btnClass = "btn-disney";
+            displayName = product.platform.toUpperCase();
         }
 
         const cardHtml = `
             <div class="product-card">
-                <img src="${logoSrc}" alt="${product.platform}" class="product-logo">
-                <div class="product-name">${product.platform.toUpperCase()} - ${product.duration_days} วัน</div>
+                <img src="${logoSrc}" alt="${displayName}" class="product-logo">
+                <div class="product-name">${displayName} - ${product.duration_days} วัน</div>
                 <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">พร้อมส่ง: ${product.count} รายการ</div>
                 <div class="product-price">${product.price} THB</div>
-                <button class="btn-buy ${btnClass}" onclick="buyProduct('${product.platform}', ${product.duration_days}, ${product.price})">ซื้อเลย</button>
+                <button class="btn-buy ${btnClass}" onclick="buyProduct('${product.platform}', ${product.duration_days}, ${product.price}, '${displayName}')">ซื้อเลย</button>
             </div>
         `;
         container.innerHTML += cardHtml;
     });
 }
 
-async function buyProduct(platform, duration_days, price) {
+// อัปเดตฟังก์ชันซื้อให้รับชื่อ displayName เพื่อแสดงในสลิป
+async function buyProduct(platform, duration_days, price, displayName) {
     const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
@@ -137,7 +152,7 @@ async function buyProduct(platform, duration_days, price) {
         return;
     }
 
-    const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${platform.toUpperCase()} แบบ ${duration_days} วัน\nราคา ${price} บาท หรือไม่?`);
+    const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${displayName} แบบ ${duration_days} วัน\nราคา ${price} บาท หรือไม่?`);
     if (!confirmBuy) return;
 
     try {
@@ -155,12 +170,13 @@ async function buyProduct(platform, duration_days, price) {
             
             const data = result.data;
             let receiptHtml = `
-                <div>แพลตฟอร์ม: <span>${(data.platform || platform).toUpperCase()} (${duration_days} วัน)</span></div>
+                <div>แพลตฟอร์ม: <span>${displayName} (${duration_days} วัน)</span></div>
                 <div>บัญชี (ล็อกอิน): <span>${data.account_login || data.login}</span></div>
             `;
             if (data.account_password || data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.account_password || data.password}</span></div>`;
             receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile_name || data.profile || '-'}</span></div>`;
             if (data.pin_code || data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin_code || data.pin}</span></div>`;
+            // แสดงเวลาที่เซิร์ฟเวอร์คำนวณกลับมาให้
             receiptHtml += `<div>วันหมดอายุ: <span>${data.expire_date || '-'}</span></div>
                 
                 <div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">
@@ -187,7 +203,6 @@ async function buyProduct(platform, duration_days, price) {
     }
 }
 
-// อัปเดตระบบสมัครสมาชิกให้เก็บ PIN ด้วย
 async function register() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
@@ -238,7 +253,6 @@ function logout() {
     alert('ออกจากระบบแล้ว');
 }
 
-// ระบบรีเซ็ตรหัสผ่านแบบใหม่ (ต้องใช้ PIN)
 async function resetPassword() {
     const email = document.getElementById('auth-email').value;
     const newPassword = document.getElementById('auth-password').value;
