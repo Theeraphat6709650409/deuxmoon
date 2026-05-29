@@ -1,262 +1,346 @@
 const API_URL = "https://deuxmoon-api.onrender.com";
 let isLoginMode = true;
 
-// --- ควบคุมการสลับหน้าต่าง (UI Toggles) ---
-function toggleTopup() {
-    const store = document.getElementById('store-section');
-    const topup = document.getElementById('topup-section');
-    
-    if (store.style.display === 'none') {
-        store.style.display = 'block';
-        topup.style.display = 'none';
-    } else {
-        store.style.display = 'none';
-        topup.style.display = 'block';
-    }
+function getToken() {
+  return localStorage.getItem("token") || "";
 }
 
-function openAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
-function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
-function closeReceiptModal() { document.getElementById('receipt-modal').style.display = 'none'; }
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch (_) {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    return null;
+  }
+}
+
+function saveSession(user, token) {
+  localStorage.setItem("user", JSON.stringify(user));
+  if (token) localStorage.setItem("token", token);
+}
+
+function clearSession() {
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
+}
+
+function formatMoney(value) {
+  const n = Number(value || 0);
+  return n.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+async function requestJSON(url, options = {}) {
+  const headers = options.headers ? { ...options.headers } : {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(url, { ...options, headers });
+  const result = await response.json().catch(() => ({ status: "error", message: "เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง" }));
+
+  if (response.status === 401) {
+    clearSession();
+    checkLoginStatus();
+  }
+  return result;
+}
+
+function toggleTopup() {
+  const store = document.getElementById("store-section");
+  const topup = document.getElementById("topup-section");
+  const isTopupOpen = store.style.display === "none";
+  store.style.display = isTopupOpen ? "block" : "none";
+  topup.style.display = isTopupOpen ? "none" : "block";
+}
+
+function openAuthModal() {
+  document.getElementById("auth-modal").style.display = "flex";
+}
+
+function closeAuthModal() {
+  document.getElementById("auth-modal").style.display = "none";
+}
+
+function closeReceiptModal() {
+  document.getElementById("receipt-modal").style.display = "none";
+}
 
 function toggleAuthMode() {
-    isLoginMode = !isLoginMode;
-    document.getElementById('auth-title').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
-    document.getElementById('btn-login').style.display = isLoginMode ? 'block' : 'none';
-    document.getElementById('btn-register').style.display = isLoginMode ? 'none' : 'block';
-    document.getElementById('auth-switch-text').innerText = isLoginMode ? 'ยังไม่มีบัญชี? กดที่นี่เพื่อสมัครสมาชิก' : 'มีบัญชีแล้ว? กดที่นี่เพื่อเข้าสู่ระบบ';
+  isLoginMode = !isLoginMode;
+  document.getElementById("auth-title").innerText = isLoginMode ? "เข้าสู่ระบบ" : "สมัครสมาชิก";
+  document.getElementById("btn-login").style.display = isLoginMode ? "block" : "none";
+  document.getElementById("btn-register").style.display = isLoginMode ? "none" : "block";
+  document.getElementById("auth-switch-text").innerText = isLoginMode
+    ? "ยังไม่มีบัญชี? กดที่นี่เพื่อสมัครสมาชิก"
+    : "มีบัญชีแล้ว? กดที่นี่เพื่อเข้าสู่ระบบ";
 }
 
-// --- ฟังก์ชันดึงและแสดงข้อมูลสินค้า ---
-async function fetchProducts() {
-    const container = document.getElementById('product-container');
-    try {
-        const response = await fetch(`${API_URL}/check-products`);
-        const result = await response.json();
+function setContainerMessage(container, message) {
+  container.textContent = message;
+}
 
-        if (result.status === 'success') {
-            renderProducts(result.data);
-        } else {
-            container.innerHTML = `<p style="color: #ffb3b3;">เกิดข้อผิดพลาด: ${result.message}</p>`;
-        }
-    } catch (error) {
-        container.innerHTML = `<p style="color: #ffb3b3;">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้</p>`;
+async function fetchProducts() {
+  const container = document.getElementById("product-container");
+  setContainerMessage(container, "กำลังโหลดข้อมูลสินค้า...");
+
+  try {
+    const response = await fetch(`${API_URL}/check-products`);
+    const result = await response.json();
+    if (result.status === "success") {
+      renderProducts(result.data || []);
+    } else {
+      setContainerMessage(container, `เกิดข้อผิดพลาด: ${result.message || "ไม่ทราบสาเหตุ"}`);
     }
+  } catch (_) {
+    setContainerMessage(container, "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+  }
+}
+
+function productLogo(platform) {
+  const name = String(platform || "").toLowerCase();
+  if (name === "netflix") {
+    return {
+      src: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
+      btnClass: "btn-netflix",
+    };
+  }
+  return {
+    src: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg",
+    btnClass: "btn-disney",
+  };
 }
 
 function renderProducts(products) {
-    const container = document.getElementById('product-container');
-    container.innerHTML = '';
+  const container = document.getElementById("product-container");
+  container.replaceChildren();
 
-    if (products.length === 0) {
-        container.innerHTML = '<p style="text-align: center; width: 100%;">ขณะนี้สินค้าหมดชั่วคราว</p>';
-        return;
+  if (!products.length) {
+    setContainerMessage(container, "ขณะนี้สินค้าหมดชั่วคราว");
+    return;
+  }
+
+  const groupedProducts = {};
+  products.forEach((p) => {
+    const key = `${p.platform}_${p.duration_days}_${p.price}`;
+    if (!groupedProducts[key]) {
+      groupedProducts[key] = {
+        platform: p.platform,
+        duration_days: Number(p.duration_days),
+        price: Number(p.price),
+        count: 1,
+      };
+    } else {
+      groupedProducts[key].count += 1;
     }
+  });
 
-    // จัดกลุ่มสินค้าด้วย คีย์ผสม (เช่น netflix_1, netflix_7, netflix_30)
-    const groupedProducts = {};
-    products.forEach(p => {
-        const key = `${p.platform}_${p.duration_days}`;
-        if (!groupedProducts[key]) {
-            groupedProducts[key] = { 
-                platform: p.platform, 
-                duration_days: p.duration_days,
-                price: p.price, 
-                count: 1 
-            };
-        } else {
-            groupedProducts[key].count++;
-        }
-    });
+  Object.values(groupedProducts).forEach((product) => {
+    const { src, btnClass } = productLogo(product.platform);
 
-    Object.values(groupedProducts).forEach(product => {
-        let logoSrc, btnClass;
-        if (product.platform.toLowerCase() === 'netflix') {
-            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg";
-            btnClass = "btn-netflix";
-        } else {
-            logoSrc = "https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg";
-            btnClass = "btn-disney";
-        }
+    const card = document.createElement("div");
+    card.className = "product-card";
 
-        const cardHtml = `
-            <div class="product-card">
-                <img src="${logoSrc}" alt="${product.platform}" class="product-logo">
-                <div class="product-name">${product.platform.toUpperCase()} - ${product.duration_days} วัน</div>
-                <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">
-                    พร้อมส่ง: ${product.count} รายการ
-                </div>
-                <div class="product-price">${product.price} THB</div>
-                <button class="btn-buy ${btnClass}" onclick="buyProduct('${product.platform}', ${product.duration_days}, ${product.price})">
-                    ซื้อเลย
-                </button>
-            </div>
-        `;
-        container.innerHTML += cardHtml;
-    });
+    const img = document.createElement("img");
+    img.className = "product-logo";
+    img.src = src;
+    img.alt = `${product.platform} logo`;
+
+    const name = document.createElement("div");
+    name.className = "product-name";
+    name.textContent = `${String(product.platform).toUpperCase()} - ${product.duration_days} วัน`;
+
+    const stock = document.createElement("div");
+    stock.className = "product-stock";
+    stock.textContent = `พร้อมส่ง: ${product.count} รายการ`;
+
+    const price = document.createElement("div");
+    price.className = "product-price";
+    price.textContent = `${formatMoney(product.price)} THB`;
+
+    const btn = document.createElement("button");
+    btn.className = `btn-buy ${btnClass}`;
+    btn.type = "button";
+    btn.textContent = "ซื้อเลย";
+    btn.addEventListener("click", () => buyProduct(product.platform, product.duration_days, product.price));
+
+    card.append(img, name, stock, price, btn);
+    container.appendChild(card);
+  });
 }
 
 async function buyProduct(platform, duration_days, price) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-        alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อครับ');
-        openAuthModal();
-        return;
+  const user = getStoredUser();
+  if (!user || !getToken()) {
+    alert("กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อครับ");
+    openAuthModal();
+    return;
+  }
+
+  if (Number(user.credit_balance || 0) < Number(price || 0)) {
+    alert("ยอดเงินของคุณไม่เพียงพอ กรุณาเติมเงินก่อนครับ");
+    toggleTopup();
+    return;
+  }
+
+  const confirmBuy = confirm(
+    `ยืนยันการสั่งซื้อแพ็กเกจ ${String(platform).toUpperCase()} แบบ ${duration_days} วัน\nราคา ${formatMoney(price)} บาท หรือไม่?`
+  );
+  if (!confirmBuy) return;
+
+  try {
+    const result = await requestJSON(`${API_URL}/buy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platform, duration_days }),
+    });
+
+    if (result.status === "success") {
+      user.credit_balance = result.remaining_credit;
+      saveSession(user);
+      checkLoginStatus();
+      showReceipt(result.data, duration_days);
+      fetchProducts();
+    } else {
+      alert(`ไม่สามารถซื้อได้: ${result.message || "ไม่ทราบสาเหตุ"}`);
     }
-
-    const user = JSON.parse(userStr);
-
-    if (parseFloat(user.credit_balance) < price) {
-        alert('ยอดเงินของคุณไม่เพียงพอ กรุณาเติมเงินก่อนครับ');
-        toggleTopup();
-        return;
-    }
-
-    const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${platform.toUpperCase()} แบบ ${duration_days} วัน\nราคา ${price} บาท หรือไม่?`);
-    if (!confirmBuy) return;
-
-    try {
-        const response = await fetch(`${API_URL}/buy`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                platform: platform,
-                duration_days: duration_days, // ส่งจำนวนวันไปบอกหลังบ้าน
-                user_id: user.id 
-            })
-        });
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            user.credit_balance = result.remaining_credit;
-            localStorage.setItem('user', JSON.stringify(user));
-            checkLoginStatus();
-            
-            const data = result.data;
-            
-            let receiptHtml = `
-                <div>แพลตฟอร์ม: <span>${data.platform.toUpperCase()} (${duration_days} วัน)</span></div>
-                <div>บัญชี (ล็อกอิน): <span>${data.login}</span></div>
-            `;
-            if (data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.password}</span></div>`;
-            receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile}</span></div>`;
-            if (data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin}</span></div>`;
-            receiptHtml += `<div>วันหมดอายุ: <span>${data.expire_date}</span></div>
-                <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
-                <div style="text-align: center; font-size: 14px; color: var(--text-muted);">กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ</div>
-            `;
-            
-            document.getElementById('receipt-details').innerHTML = receiptHtml;
-            document.getElementById('receipt-modal').style.display = 'flex';
-            
-            fetchProducts(); 
-        } else {
-            alert(`ไม่สามารถซื้อได้: ${result.message}`);
-        }
-    } catch (error) {
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
-    }
+  } catch (_) {
+    alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์");
+  }
 }
 
-// --- ระบบสมาชิก (Auth) ---
+function addReceiptRow(parent, label, value) {
+  if (value === undefined || value === null || value === "") return;
+  const row = document.createElement("p");
+  const strong = document.createElement("strong");
+  strong.textContent = `${label}: `;
+  const span = document.createElement("span");
+  span.textContent = String(value);
+  row.append(strong, span);
+  parent.appendChild(row);
+}
+
+function showReceipt(data, duration_days) {
+  const receipt = document.getElementById("receipt-details");
+  receipt.replaceChildren();
+
+  addReceiptRow(receipt, "แพลตฟอร์ม", `${String(data.platform).toUpperCase()} (${duration_days} วัน)`);
+  addReceiptRow(receipt, "บัญชี (ล็อกอิน)", data.login);
+  addReceiptRow(receipt, "รหัสผ่าน", data.password);
+  addReceiptRow(receipt, "เข้าใช้งานจอ", data.profile);
+  addReceiptRow(receipt, "รหัสเข้าจอ (PIN)", data.pin);
+  addReceiptRow(receipt, "วันหมดอายุ", data.expire_date);
+
+  const note = document.createElement("p");
+  note.textContent = "*** กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ";
+  receipt.appendChild(note);
+
+  document.getElementById("receipt-modal").style.display = "flex";
+}
+
 async function register() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    
-    const res = await fetch(`${API_URL}/register`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    const result = await res.json();
-    alert(result.message);
-    if (result.status === 'success') toggleAuthMode(); 
+  const email = document.getElementById("auth-email").value.trim();
+  const password = document.getElementById("auth-password").value;
+
+  const result = await requestJSON(`${API_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  alert(result.message || "สมัครสมาชิกไม่สำเร็จ");
+  if (result.status === "success") toggleAuthMode();
 }
 
 async function login() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    
-    const res = await fetch(`${API_URL}/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    const result = await res.json();
-    
-    if (result.status === 'success') {
-        localStorage.setItem('user', JSON.stringify(result.data));
-        closeAuthModal();
-        checkLoginStatus();
-        alert('เข้าสู่ระบบสำเร็จ!');
-    } else {
-        alert(result.message);
-    }
+  const email = document.getElementById("auth-email").value.trim();
+  const password = document.getElementById("auth-password").value;
+
+  const result = await requestJSON(`${API_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (result.status === "success") {
+    saveSession(result.data, result.token);
+    closeAuthModal();
+    checkLoginStatus();
+    alert("เข้าสู่ระบบสำเร็จ!");
+  } else {
+    alert(result.message || "เข้าสู่ระบบไม่สำเร็จ");
+  }
 }
 
 function logout() {
-    localStorage.removeItem('user');
-    checkLoginStatus();
-    alert('ออกจากระบบแล้ว');
+  clearSession();
+  checkLoginStatus();
+  alert("ออกจากระบบแล้ว");
 }
 
 function checkLoginStatus() {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-        const user = JSON.parse(userStr);
-        document.getElementById('menu-guest').style.display = 'none';
-        document.getElementById('menu-logged-in').style.display = 'flex';
-        document.getElementById('display-email').innerText = user.email;
-        document.getElementById('credit-display').innerText = user.credit_balance;
-    } else {
-        document.getElementById('menu-guest').style.display = 'flex';
-        document.getElementById('menu-logged-in').style.display = 'none';
-    }
+  const user = getStoredUser();
+  const hasSession = Boolean(user && getToken());
+
+  document.getElementById("menu-guest").style.display = hasSession ? "none" : "flex";
+  document.getElementById("menu-logged-in").style.display = hasSession ? "flex" : "none";
+
+  if (hasSession) {
+    document.getElementById("display-email").innerText = user.email || "";
+    document.getElementById("credit-display").innerText = formatMoney(user.credit_balance);
+  }
 }
 
-// เริ่มต้นทำงานเมื่อเปิดหน้าเว็บ
-window.onload = () => {
+async function refreshMe() {
+  if (!getToken()) return;
+  const result = await requestJSON(`${API_URL}/me`);
+  if (result.status === "success") {
+    saveSession(result.data);
     checkLoginStatus();
-    fetchProducts();
-};
+  }
+}
 
 async function uploadSlip() {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-        alert('กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ');
-        return;
+  const user = getStoredUser();
+  if (!user || !getToken()) {
+    alert("กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ");
+    openAuthModal();
+    return;
+  }
+
+  const fileInput = document.getElementById("slip-upload");
+  if (!fileInput.files.length) {
+    alert("กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("slip", fileInput.files[0]);
+
+  alert("ระบบกำลังตรวจสอบสลิปโอนเงิน กรุณารอสักครู่ครับ...");
+
+  try {
+    const result = await requestJSON(`${API_URL}/topup`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (result.status === "success") {
+      alert(result.message || "เติมเงินสำเร็จ");
+      user.credit_balance = result.new_balance;
+      saveSession(user);
+      checkLoginStatus();
+      fileInput.value = "";
+      toggleTopup();
+    } else {
+      alert(`เติมเงินไม่สำเร็จ: ${result.message || "ไม่ทราบสาเหตุ"}`);
     }
-    const user = JSON.parse(userStr);
-    const fileInput = document.getElementById('slip-upload');
-    
-    if (fileInput.files.length === 0) {
-        alert('กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ');
-        return;
-    }
-
-    const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append('slip', file);
-    formData.append('user_id', user.id);
-
-    alert('ระบบกำลังตรวจสอบสลิปโอนเงิน กรุณารอสักครู่ครับ...');
-
-    try {
-        const response = await fetch(`${API_URL}/topup`, {
-            method: 'POST',
-            body: formData
-        });
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            alert(result.message);
-            user.credit_balance = result.new_balance;
-            localStorage.setItem('user', JSON.stringify(user));
-            checkLoginStatus();
-            fileInput.value = '';
-            toggleTopup();
-        } else {
-            alert(`เติมเงินไม่สำเร็จ: ${result.message}`);
-        }
-    } catch (error) {
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
-    }
+  } catch (_) {
+    alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+  }
 }
+
+window.onload = () => {
+  checkLoginStatus();
+  refreshMe();
+  fetchProducts();
+};
