@@ -216,12 +216,16 @@ def topup_credit():
 
     try:
         # 1. ส่งรูปไปให้ Slip2Go ตรวจ
-        # ลองเปลี่ยน URL โดยเติม api. เข้าไปด้านหน้า
-        slip2go_url = "https://api.slip2go.com/api/verify-slip/qr-image/info"
+        slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
         
         headers_slip2go = {
             'Authorization': f'Bearer {slip2go_secret}'
         }
+        
+        # จุดสำคัญ: ต้องเป็นคำว่า 'file' ตามโครงสร้าง Multipart/Form-data ของ API
+        files = {'file': (slip_file.filename, slip_file.read(), slip_file.mimetype)}
+        
+        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
         
         # เปลี่ยนชื่อคีย์จาก 'file' เป็น 'files' ตามมาตรฐานระบบอัปโหลดส่วนใหญ่
         files = {'files': (slip_file.filename, slip_file.read(), slip_file.mimetype)}
