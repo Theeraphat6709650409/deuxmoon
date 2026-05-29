@@ -204,6 +204,10 @@ def topup_credit():
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     slip2go_secret = os.environ.get("SLIP2GO_API_SECRET")
 
+    # ดักจับกรณีที่ Render ดึงคีย์ API Secret มาไม่ได้
+    if not slip2go_secret:
+        return jsonify({'status': 'error', 'message': 'ระบบหลังบ้านยังไม่ได้ตั้งค่า SLIP2GO_API_SECRET'}), 500
+
     headers_supabase = {
         "apikey": supabase_key,
         "Authorization": f"Bearer {supabase_key}",
@@ -217,10 +221,16 @@ def topup_credit():
         files = {'file': (slip_file.filename, slip_file.read(), slip_file.mimetype)}
         
         slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
-        slip2go_data = slip2go_res.json()
+
+        # เพิ่มระบบดักจับ Error จาก Slip2Go
+        try:
+            slip2go_data = slip2go_res.json()
+        except ValueError:
+            return jsonify({'status': 'error', 'message': f'เซิร์ฟเวอร์ Slip2Go ขัดข้อง ({slip2go_res.status_code}): {slip2go_res.text[:100]}'}), 400
 
         if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
-            return jsonify({'status': 'error', 'message': 'สลิปไม่ถูกต้อง หรืออ่านภาพไม่ชัด'}), 400
+            err_msg = slip2go_data.get('message', 'สลิปไม่ถูกต้อง หรือไม่สามารถอ่าน QR Code ได้')
+            return jsonify({'status': 'error', 'message': f'ตรวจสลิปไม่ผ่าน: {err_msg}'}), 400
 
         result_data = slip2go_data.get('data', {})
         trans_ref = result_data.get('transRef')      
@@ -232,12 +242,24 @@ def topup_credit():
 
         # 2. เช็คว่าเคยใช้สลิปนี้หรือยัง
         check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
-        if requests.get(check_url, headers=headers_supabase).json():
-            return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
+        check_res = requests.get(check_url, headers=headers_supabase)
+        
+        # เพิ่มระบบดักจับ Error จาก Supabase
+        try:
+            if check_res.json():
+                return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
+        except ValueError:
+            return jsonify({'status': 'error', 'message': f'ฐานข้อมูลขัดข้อง (เช็คสลิป): {check_res.text[:100]}'}), 500
 
         # 3. ดึงข้อมูลกระเป๋าเงินลูกค้า
         user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
-        users = requests.get(user_url, headers=headers_supabase).json()
+        user_res = requests.get(user_url, headers=headers_supabase)
+        
+        try:
+            users = user_res.json()
+        except ValueError:
+            return jsonify({'status': 'error', 'message': f'ฐานข้อมูลขัดข้อง (เช็คผู้ใช้): {user_res.text[:100]}'}), 500
+
         if not users:
             return jsonify({'status': 'error', 'message': 'ไม่พบผู้ใช้นี้ในระบบ'}), 404
             
@@ -254,7 +276,6 @@ def topup_credit():
         return jsonify({'status': 'success', 'message': f'เติมเงินสำเร็จ {amount} บาท', 'new_balance': new_credit})
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-    
+        return jsonify({'status': 'error', 'message': f'เกิดข้อผิดพลาด: {str(e)}'}), 500
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
