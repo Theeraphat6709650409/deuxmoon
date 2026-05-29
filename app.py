@@ -190,5 +190,71 @@ def login():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/topup', methods=['POST', 'OPTIONS'])
+def topup_credit():
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    user_id = request.form.get('user_id')
+    if 'slip' not in request.files or not user_id:
+        return jsonify({'status': 'error', 'message': 'ข้อมูลไม่ครบถ้วน'}), 400
+
+    slip_file = request.files['slip']
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    slip2go_secret = os.environ.get("SLIP2GO_API_SECRET")
+
+    headers_supabase = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # 1. ส่งรูปไปให้ Slip2Go ตรวจ
+        slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
+        headers_slip2go = {'Authorization': f'Bearer {slip2go_secret}'}
+        files = {'file': (slip_file.filename, slip_file.read(), slip_file.mimetype)}
+        
+        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
+        slip2go_data = slip2go_res.json()
+
+        if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
+            return jsonify({'status': 'error', 'message': 'สลิปไม่ถูกต้อง หรืออ่านภาพไม่ชัด'}), 400
+
+        result_data = slip2go_data.get('data', {})
+        trans_ref = result_data.get('transRef')      
+        amount = float(result_data.get('amount', 0))     
+        sending_bank = result_data.get('sender', {}).get('bankId', 'Unknown') 
+
+        if not trans_ref or amount <= 0:
+            return jsonify({'status': 'error', 'message': 'ข้อมูลในสลิปไม่ครบถ้วน'}), 400
+
+        # 2. เช็คว่าเคยใช้สลิปนี้หรือยัง
+        check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
+        if requests.get(check_url, headers=headers_supabase).json():
+            return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
+
+        # 3. ดึงข้อมูลกระเป๋าเงินลูกค้า
+        user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
+        users = requests.get(user_url, headers=headers_supabase).json()
+        if not users:
+            return jsonify({'status': 'error', 'message': 'ไม่พบผู้ใช้นี้ในระบบ'}), 404
+            
+        current_credit = float(users[0]['credit_balance'])
+
+        # 4. บันทึกสลิปนี้ลงประวัติ
+        tx_payload = {"user_id": user_id, "amount": amount, "sending_bank": sending_bank, "trans_ref": trans_ref}
+        requests.post(f"{supabase_url}/rest/v1/topup_transactions", headers=headers_supabase, json=tx_payload).raise_for_status()
+
+        # 5. บวกเงินเข้ากระเป๋า
+        new_credit = current_credit + amount
+        requests.patch(user_url, headers=headers_supabase, json={"credit_balance": new_credit}).raise_for_status()
+
+        return jsonify({'status': 'success', 'message': f'เติมเงินสำเร็จ {amount} บาท', 'new_balance': new_credit})
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

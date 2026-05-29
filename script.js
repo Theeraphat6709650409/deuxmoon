@@ -217,3 +217,46 @@ window.onload = () => {
     checkLoginStatus();
     fetchProducts();
 };
+
+async function uploadSlip() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        alert('กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ');
+        return;
+    }
+    const user = JSON.parse(userStr);
+    const fileInput = document.getElementById('slip-upload');
+    
+    if (fileInput.files.length === 0) {
+        alert('กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('slip', file);
+    formData.append('user_id', user.id);
+
+    alert('ระบบกำลังตรวจสอบสลิปโอนเงิน กรุณารอสักครู่ครับ...');
+
+    try {
+        const response = await fetch(`${API_URL}/topup`, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            alert(result.message);
+            user.credit_balance = result.new_balance;
+            localStorage.setItem('user', JSON.stringify(user));
+            checkLoginStatus();
+            fileInput.value = '';
+            toggleTopup();
+        } else {
+            alert(`เติมเงินไม่สำเร็จ: ${result.message}`);
+        }
+    } catch (error) {
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    }
+}
