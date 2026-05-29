@@ -197,11 +197,13 @@ def topup_credit():
     file_bytes = slip_file.read()
     
     if len(file_bytes) == 0:
-        return jsonify({'status': 'error', 'message': 'ไม่สามารถอ่านไฟล์รูปภาพได้ หรือไฟล์ว่างเปล่า'}), 400
+        return jsonify({'status': 'error', 'message': 'ไม่สามารถอ่านไฟล์รูปภาพได้'}), 400
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
-    slip2go_secret = os.environ.get("SLIP2GO_API_SECRET")
+    
+    # 1. ป้องกันปัญหาคีย์มีช่องว่างซ่อนอยู่ ด้วยการใช้ .strip()
+    slip2go_secret = os.environ.get("SLIP2GO_API_SECRET", "").strip()
 
     if not slip2go_secret:
         return jsonify({'status': 'error', 'message': 'ระบบหลังบ้านยังไม่ได้ตั้งค่า SLIP2GO_API_SECRET'}), 500
@@ -213,23 +215,19 @@ def topup_credit():
     }
 
     try:
-        # 1. ส่งรูปไปให้ Slip2Go ตรวจ
         slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
         headers_slip2go = {'Authorization': f'Bearer {slip2go_secret}'}
         
-        # จัดเตรียมไฟล์รูปภาพ
-        files = {'file': (slip_file.filename, file_bytes, slip_file.mimetype)}
+        # 2. ป้องกันปัญหาระบบ Slip2Go แครชเพราะชื่อไฟล์ ด้วยการล็อกชื่อไฟล์เป็น slip.jpg
+        files = {'file': ('slip.jpg', file_bytes, slip_file.mimetype or 'image/jpeg')}
         
-        # เพิ่มข้อมูล payload เปล่าๆ เข้าไป เพื่อป้องกันเซิร์ฟเวอร์ Slip2Go แครช (จุดที่แก้ไขในรอบนี้)
-        payload_data = {'payload': '{"checkDuplicate": false}'}
-        
-        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files, data=payload_data)
+        # ส่งเฉพาะไฟล์เพียวๆ ตามคู่มือ (เอา payload ออกเพื่อไม่ให้ระบบฝั่งนู้นสับสน)
+        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
 
         try:
             slip2go_data = slip2go_res.json()
         except ValueError:
-            # หากเซิร์ฟเวอร์แครชอีก จะแสดงข้อความ Response ตอบกลับมาด้วยเพื่อหาสาเหตุที่แท้จริง
-            return jsonify({'status': 'error', 'message': f'เซิร์ฟเวอร์ Slip2Go ขัดข้อง ({slip2go_res.status_code}): {slip2go_res.text[:100]}' }), 400
+            return jsonify({'status': 'error', 'message': f'ระบบ Slip2Go ขัดข้อง ({slip2go_res.status_code}): {slip2go_res.text[:100]}'}), 400
 
         if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
             err_msg = slip2go_data.get('message', 'สลิปไม่ถูกต้อง หรือไม่สามารถอ่าน QR Code ได้')
@@ -243,35 +241,25 @@ def topup_credit():
         if not trans_ref or amount <= 0:
             return jsonify({'status': 'error', 'message': 'ข้อมูลในสลิปไม่ครบถ้วน'}), 400
 
-        # 2. เช็คว่าเคยใช้สลิปนี้หรือยัง
+        # เช็คสลิปซ้ำ
         check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
         check_res = requests.get(check_url, headers=headers_supabase)
-        
-        try:
-            if check_res.json():
-                return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
-        except ValueError:
-            return jsonify({'status': 'error', 'message': 'ฐานข้อมูลขัดข้อง (เช็คสลิป)'}), 500
+        if check_res.json():
+            return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
 
-        # 3. ดึงข้อมูลกระเป๋าเงินลูกค้า
+        # ดึงกระเป๋าเงิน
         user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         user_res = requests.get(user_url, headers=headers_supabase)
-        
-        try:
-            users = user_res.json()
-        except ValueError:
-            return jsonify({'status': 'error', 'message': 'ฐานข้อมูลขัดข้อง (เช็คผู้ใช้)'}), 500
-
+        users = user_res.json()
         if not users:
             return jsonify({'status': 'error', 'message': 'ไม่พบผู้ใช้นี้ในระบบ'}), 404
             
         current_credit = float(users[0]['credit_balance'])
 
-        # 4. บันทึกสลิปนี้ลงประวัติ
+        # บันทึกประวัติและเพิ่มเงิน
         tx_payload = {"user_id": user_id, "amount": amount, "sending_bank": sending_bank, "trans_ref": trans_ref}
         requests.post(f"{supabase_url}/rest/v1/topup_transactions", headers=headers_supabase, json=tx_payload).raise_for_status()
 
-        # 5. บวกเงินเข้ากระเป๋า
         new_credit = current_credit + amount
         requests.patch(user_url, headers=headers_supabase, json={"credit_balance": new_credit}).raise_for_status()
 
