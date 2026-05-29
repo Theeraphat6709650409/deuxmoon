@@ -5,7 +5,7 @@ import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-# เปิด CORS ให้รองรับทุกคำขอ
+# บังคับเปิด CORS ให้ครอบคลุมทุกเส้นทางและทุก Method
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['GET'])
@@ -41,7 +41,7 @@ def buy_product():
 
     data = request.json
     platform = data.get('platform')
-    duration_days = data.get('duration_days') # รับค่าจำนวนวัน
+    duration_days = data.get('duration_days')
     user_id = data.get('user_id')
 
     if not platform or not duration_days or not user_id:
@@ -58,7 +58,7 @@ def buy_product():
     }
 
     try:
-        # 1. เช็คยอดเงินผู้ใช้ในฐานข้อมูล
+        # 1. เช็คยอดเงินผู้ใช้
         user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{user_id}", headers=headers)
         users = user_res.json()
         if not users:
@@ -67,7 +67,7 @@ def buy_product():
         user = users[0]
         current_credit = float(user['credit_balance'])
 
-        # 2. ค้นหาสินค้าตามแพลตฟอร์มและจำนวนวัน
+        # 2. ค้นหาสินค้า
         get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&limit=1"
         res = requests.get(get_url, headers=headers)
         res.raise_for_status()
@@ -80,11 +80,11 @@ def buy_product():
         product_id = target_product['id']
         price = float(target_product['price'])
 
-        # 3. ตรวจสอบว่าเงินพอซื้อหรือไม่
+        # 3. ตรวจสอบยอดเงิน
         if current_credit < price:
             return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
-        # 4. พยายามจองรหัสนี้ (ป้องกันคนแย่งกัน)
+        # 4. จองรหัส
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{product_id}&status=eq.available"
         update_data = {"status": "sold"}
         
@@ -97,7 +97,7 @@ def buy_product():
             
         purchased_account = updated_rows[0]
 
-        # 5. หักเครดิตผู้ใช้เมื่อดึงรหัสสินค้าสำเร็จ
+        # 5. หักเครดิต
         new_credit = current_credit - price
         update_user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         requests.patch(update_user_url, headers=headers, json={"credit_balance": new_credit})
@@ -117,9 +117,9 @@ def buy_product():
             'remaining_credit': new_credit
         })
         
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-    
+
 @app.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     if request.method == 'OPTIONS': 
@@ -199,12 +199,17 @@ def topup_credit():
     if 'slip' not in request.files or not user_id:
         return jsonify({'status': 'error', 'message': 'ข้อมูลไม่ครบถ้วน'}), 400
 
+    # ดึงไฟล์และแปลงเป็นข้อมูลไบต์ เพื่อป้องกันข้อผิดพลาดตอนส่งข้อมูล
     slip_file = request.files['slip']
+    file_bytes = slip_file.read()
+    
+    if len(file_bytes) == 0:
+        return jsonify({'status': 'error', 'message': 'ไม่สามารถอ่านไฟล์รูปภาพได้ หรือไฟล์ว่างเปล่า'}), 400
+
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     slip2go_secret = os.environ.get("SLIP2GO_API_SECRET")
 
-    # ดักจับกรณีที่ Render ดึงคีย์ API Secret มาไม่ได้
     if not slip2go_secret:
         return jsonify({'status': 'error', 'message': 'ระบบหลังบ้านยังไม่ได้ตั้งค่า SLIP2GO_API_SECRET'}), 500
 
@@ -219,20 +224,14 @@ def topup_credit():
         slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
         headers_slip2go = {'Authorization': f'Bearer {slip2go_secret}'}
         
-        # จัดเตรียมรูปภาพ
-        files = {'file': (slip_file.filename, slip_file.read(), slip_file.mimetype)}
-        
-        # เพิ่มข้อมูล payload เปล่าๆ เข้าไป เพื่อป้องกันเซิร์ฟเวอร์ Slip2Go แครช
-        payload_data = {'payload': '{}'}
-        
-        # ส่งไปทั้งไฟล์รูปภาพ และ payload
-        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files, data=payload_data)
+        # ส่งเฉพาะไฟล์ และระบุคีย์ 'file' ตามคู่มือของระบบ
+        files = {'file': (slip_file.filename, file_bytes, slip_file.mimetype)}
+        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
 
-        # เพิ่มระบบดักจับ Error จาก Slip2Go
         try:
             slip2go_data = slip2go_res.json()
         except ValueError:
-            return jsonify({'status': 'error', 'message': f'เซิร์ฟเวอร์ Slip2Go ขัดข้อง ({slip2go_res.status_code}): {slip2go_res.text[:100]}'}), 400
+            return jsonify({'status': 'error', 'message': f'เซิร์ฟเวอร์ Slip2Go ขัดข้อง ({slip2go_res.status_code})'}), 400
 
         if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
             err_msg = slip2go_data.get('message', 'สลิปไม่ถูกต้อง หรือไม่สามารถอ่าน QR Code ได้')
@@ -250,12 +249,11 @@ def topup_credit():
         check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
         check_res = requests.get(check_url, headers=headers_supabase)
         
-        # เพิ่มระบบดักจับ Error จาก Supabase
         try:
             if check_res.json():
                 return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
         except ValueError:
-            return jsonify({'status': 'error', 'message': f'ฐานข้อมูลขัดข้อง (เช็คสลิป): {check_res.text[:100]}'}), 500
+            return jsonify({'status': 'error', 'message': 'ฐานข้อมูลขัดข้อง (เช็คสลิป)'}), 500
 
         # 3. ดึงข้อมูลกระเป๋าเงินลูกค้า
         user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
@@ -264,7 +262,7 @@ def topup_credit():
         try:
             users = user_res.json()
         except ValueError:
-            return jsonify({'status': 'error', 'message': f'ฐานข้อมูลขัดข้อง (เช็คผู้ใช้): {user_res.text[:100]}'}), 500
+            return jsonify({'status': 'error', 'message': 'ฐานข้อมูลขัดข้อง (เช็คผู้ใช้)'}), 500
 
         if not users:
             return jsonify({'status': 'error', 'message': 'ไม่พบผู้ใช้นี้ในระบบ'}), 404
@@ -283,5 +281,6 @@ def topup_credit():
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'เกิดข้อผิดพลาด: {str(e)}'}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
