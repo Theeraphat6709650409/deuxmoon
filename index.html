@@ -231,11 +231,18 @@
 
     <nav class="navbar">
         <div class="brand">Deuxmoon</div>
-        <div class="user-menu">
+        
+        <div class="user-menu" id="menu-guest">
+            <button class="btn-buy btn-netflix" style="padding: 8px 16px; width: auto;" onclick="openAuthModal()">เข้าสู่ระบบ</button>
+        </div>
+
+        <div class="user-menu" id="menu-logged-in" style="display: none;">
+            <span id="display-email" style="font-size: 14px; color: var(--text-muted);"></span>
             <div class="wallet-badge">
                 เครดิต: <span class="wallet-amount" id="credit-display">0.00</span> THB
             </div>
             <button class="btn-topup" onclick="toggleTopup()">เติมเงิน</button>
+            <button class="btn-buy" style="background: #333; padding: 8px 16px; width: auto;" onclick="logout()">ออก</button>
         </div>
     </nav>
 
@@ -401,6 +408,75 @@
                 alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
             }
         }
+        let isLoginMode = true;
+
+        function openAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก';
+            document.getElementById('btn-login').style.display = isLoginMode ? 'block' : 'none';
+            document.getElementById('btn-register').style.display = isLoginMode ? 'none' : 'block';
+            document.getElementById('auth-switch-text').innerText = isLoginMode ? 'ยังไม่มีบัญชี? กดที่นี่เพื่อสมัครสมาชิก' : 'มีบัญชีแล้ว? กดที่นี่เพื่อเข้าสู่ระบบ';
+        }
+
+        async function register() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            const res = await fetch(`${API_URL}/register`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const result = await res.json();
+            alert(result.message);
+            if (result.status === 'success') toggleAuthMode(); // สลับกลับไปหน้าล็อกอิน
+        }
+
+        async function login() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+                // บันทึกข้อมูลลงในเครื่องลูกค้า (LocalStorage)
+                localStorage.setItem('user', JSON.stringify(result.data));
+                closeAuthModal();
+                checkLoginStatus();
+                alert('เข้าสู่ระบบสำเร็จ!');
+            } else {
+                alert(result.message);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            checkLoginStatus();
+        }
+
+        // ฟังก์ชันอัปเดตหน้าจอตามสถานะล็อกอิน
+        function checkLoginStatus() {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                document.getElementById('menu-guest').style.display = 'none';
+                document.getElementById('menu-logged-in').style.display = 'flex';
+                document.getElementById('display-email').innerText = user.email;
+                document.getElementById('credit-display').innerText = user.credit_balance;
+            } else {
+                document.getElementById('menu-guest').style.display = 'flex';
+                document.getElementById('menu-logged-in').style.display = 'none';
+            }
+        }
+
+        // เรียกใช้ฟังก์ชันเช็คสถานะทันทีเมื่อเปิดเว็บ (เพิ่มไว้ล่างสุดของ Script)
+        checkLoginStatus();
     </script>
     <div id="receipt-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
@@ -408,6 +484,21 @@
             <div id="receipt-details" class="receipt-details">
                 </div>
             <button class="btn-buy btn-disney" onclick="closeReceiptModal()" style="margin-top: 20px;">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+    <div id="auth-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="text-align: center;">
+            <h3 class="modal-title" id="auth-title">เข้าสู่ระบบ</h3>
+            <input type="email" id="auth-email" placeholder="อีเมล" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box;">
+            <input type="password" id="auth-password" placeholder="รหัสผ่าน" style="width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 8px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--dark-border); box-sizing: border-box;">
+            
+            <button class="btn-buy btn-disney" id="btn-login" onclick="login()">เข้าสู่ระบบ</button>
+            <button class="btn-buy btn-netflix" id="btn-register" onclick="register()" style="display: none;">ยืนยันสมัครสมาชิก</button>
+            
+            <div style="margin-top: 15px; font-size: 14px; color: var(--text-muted); cursor: pointer;" onclick="toggleAuthMode()">
+                <span id="auth-switch-text">ยังไม่มีบัญชี? กดที่นี่เพื่อสมัครสมาชิก</span>
+            </div>
+            <button class="btn-buy" style="background: transparent; border: 1px solid #555; margin-top: 15px;" onclick="closeAuthModal()">ยกเลิก</button>
         </div>
     </div>
 </body>
