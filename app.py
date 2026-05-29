@@ -201,10 +201,12 @@ def topup_credit():
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
-    slip2go_secret = os.environ.get("SLIP2GO_API_SECRET", "").strip()
+    
+    slipok_branch_id = os.environ.get("SLIPOK_BRANCH_ID", "").strip()
+    slipok_api_key = os.environ.get("SLIPOK_API_KEY", "").strip()
 
-    if not slip2go_secret:
-        return jsonify({'status': 'error', 'message': 'ระบบหลังบ้านยังไม่ได้ตั้งค่า SLIP2GO_API_SECRET'}), 500
+    if not slipok_branch_id or not slipok_api_key:
+        return jsonify({'status': 'error', 'message': 'ระบบหลังบ้านยังไม่ได้ตั้งค่าคีย์ SLIPOK'}), 500
 
     headers_supabase = {
         "apikey": supabase_key,
@@ -213,43 +215,39 @@ def topup_credit():
     }
 
     try:
-        slip2go_url = "https://slip2go.com/api/verify-slip/qr-image/info"
-        headers_slip2go = {'Authorization': f'Bearer {slip2go_secret}'}
+        # ยิงข้อมูลสลิปไปตรวจสอบที่เซิร์ฟเวอร์ SlipOK
+        slipok_url = f"https://api.slipok.com/api/line/apikey/{slipok_branch_id}"
+        headers_slipok = {'x-authorization': slipok_api_key}
         
-        # แนบเฉพาะไฟล์รูปภาพตามมาตรฐาน Form-data
-        files = {'file': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
+        # SlipOK ต้องการให้แนบไฟล์ผ่านคีย์คำว่า 'files'
+        files = {'files': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
         
-        slip2go_res = requests.post(slip2go_url, headers=headers_slip2go, files=files)
-
-        # พิมพ์ Log เข้า Render Console เพื่อใช้ Debug
-        print(f"--- Slip2Go Status: {slip2go_res.status_code} ---")
-        print(f"--- Slip2Go Response: {slip2go_res.text[:500]} ---")
-
-        if slip2go_res.status_code == 500:
-            return jsonify({'status': 'error', 'message': 'เซิร์ฟเวอร์ Slip2Go ล่ม (500) อาจเกิดจากขนาดไฟล์ใหญ่เกินไป กรุณาลองลดขนาดภาพ'}), 400
+        slipok_res = requests.post(slipok_url, headers=headers_slipok, files=files)
 
         try:
-            slip2go_data = slip2go_res.json()
+            slipok_data = slipok_res.json()
         except ValueError:
-            return jsonify({'status': 'error', 'message': f'ระบบ Slip2Go ขัดข้อง โค้ด {slip2go_res.status_code}' }), 400
+            return jsonify({'status': 'error', 'message': f'ระบบ SlipOK ขัดข้อง ({slipok_res.status_code})' }), 400
 
-        if slip2go_res.status_code != 200 or not slip2go_data.get('success'):
-            err_msg = slip2go_data.get('message', 'สลิปไม่ถูกต้อง หรือไม่สามารถอ่าน QR Code ได้')
+        if slipok_res.status_code != 200 or not slipok_data.get('success'):
+            err_msg = slipok_data.get('message', 'สลิปไม่ถูกต้อง หรืออ่านภาพไม่ชัดเจน')
             return jsonify({'status': 'error', 'message': f'ตรวจสลิปไม่ผ่าน: {err_msg}'}), 400
 
-        result_data = slip2go_data.get('data', {})
+        result_data = slipok_data.get('data', {})
         trans_ref = result_data.get('transRef')      
         amount = float(result_data.get('amount', 0))     
-        sending_bank = result_data.get('sender', {}).get('bankId', 'Unknown') 
+        sending_bank = result_data.get('sendingBank', 'Unknown') 
 
         if not trans_ref or amount <= 0:
-            return jsonify({'status': 'error', 'message': 'ข้อมูลในสลิปไม่ครบถ้วน'}), 400
+            return jsonify({'status': 'error', 'message': 'ข้อมูลยอดเงินในสลิปไม่ครบถ้วน'}), 400
 
+        # เช็คสลิปซ้ำ
         check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
         check_res = requests.get(check_url, headers=headers_supabase)
         if check_res.json():
             return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
 
+        # ดึงกระเป๋าเงินและเพิ่มยอด
         user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         user_res = requests.get(user_url, headers=headers_supabase)
         users = user_res.json()
@@ -267,7 +265,7 @@ def topup_credit():
         return jsonify({'status': 'success', 'message': f'เติมเงินสำเร็จ {amount} บาท', 'new_balance': new_credit})
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': f'เกิดข้อผิดพลาด: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': f'เกิดข้อผิดพลาดในการเชื่อมต่อ: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
