@@ -96,6 +96,19 @@ def buy_product():
         update_user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         requests.patch(update_user_url, headers=headers, json={"credit_balance": new_credit})
         
+        purchase_payload = {
+            "user_id": user_id,
+            "product_id": product_id,
+            "platform": purchased_account.get('platform', ''),
+            "account_login": purchased_account.get('account_login', ''),
+            "account_password": purchased_account.get('account_password', ''),
+            "profile_name": purchased_account.get('profile_name', ''),
+            "pin_code": purchased_account.get('pin_code', ''),
+            "expire_date": purchased_account.get('expire_date', ''),
+            "price": price
+        }
+        requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
+        
         receipt = {
             "platform": purchased_account['platform'],
             "login": purchased_account['account_login'],
@@ -215,11 +228,8 @@ def topup_credit():
     }
 
     try:
-        # ยิงข้อมูลสลิปไปตรวจสอบที่เซิร์ฟเวอร์ SlipOK
         slipok_url = f"https://api.slipok.com/api/line/apikey/{slipok_branch_id}"
         headers_slipok = {'x-authorization': slipok_api_key}
-        
-        # SlipOK ต้องการให้แนบไฟล์ผ่านคีย์คำว่า 'files'
         files = {'files': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
         
         slipok_res = requests.post(slipok_url, headers=headers_slipok, files=files)
@@ -241,13 +251,11 @@ def topup_credit():
         if not trans_ref or amount <= 0:
             return jsonify({'status': 'error', 'message': 'ข้อมูลยอดเงินในสลิปไม่ครบถ้วน'}), 400
 
-        # เช็คสลิปซ้ำ
         check_url = f"{supabase_url}/rest/v1/topup_transactions?trans_ref=eq.{trans_ref}"
         check_res = requests.get(check_url, headers=headers_supabase)
         if check_res.json():
             return jsonify({'status': 'error', 'message': 'สลิปนี้เคยใช้งานไปแล้ว'}), 409
 
-        # ดึงกระเป๋าเงินและเพิ่มยอด
         user_url = f"{supabase_url}/rest/v1/users?id=eq.{user_id}"
         user_res = requests.get(user_url, headers=headers_supabase)
         users = user_res.json()
@@ -266,6 +274,32 @@ def topup_credit():
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'เกิดข้อผิดพลาดในการเชื่อมต่อ: {str(e)}'}), 500
+
+@app.route('/history', methods=['GET', 'OPTIONS'])
+def get_history():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'ไม่พบรหัสผู้ใช้'}), 400
+
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        url = f"{supabase_url}/rest/v1/purchases?user_id=eq.{user_id}&select=*&order=created_at.desc"
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return jsonify({'status': 'success', 'data': response.json()})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

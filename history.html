@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ประวัติการซื้อ - Deuxmoon Store</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* จัดรูปแบบตารางให้เข้ากับธีมกล่องสินค้าของคุณ */
+        .history-wrapper {
+            background-color: var(--dark-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--dark-border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--dark-border);
+        }
+        th {
+            color: #ffb74d;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* ปุ่มคัดลอก */
+        .copy-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--dark-border);
+            color: var(--text-light);
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+            transition: 0.3s;
+        }
+        .copy-btn:hover {
+            background: var(--disney-btn);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand" style="cursor: pointer;" onclick="window.location.href='index.html'">Deuxmoon</div>
+        
+        <div class="user-menu" id="menu-logged-in">
+            <span id="display-email" style="font-size: 14px; color: var(--text-muted);"></span>
+            <button class="btn-topup" style="background: #333;" onclick="window.location.href='index.html'">กลับหน้าหลัก</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="section-title">ประวัติการซื้อของคุณ</h2>
+        
+        <div class="history-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>วันที่ซื้อ</th>
+                        <th>แพลตฟอร์ม</th>
+                        <th>อีเมลล็อกอิน</th>
+                        <th>รหัสผ่าน</th>
+                        <th>โปรไฟล์ (PIN)</th>
+                        <th>วันหมดอายุ</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                            กำลังโหลดข้อมูล...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://deuxmoon-api.onrender.com";
+
+        // ฟังก์ชันระบบกดปุ่ม Copy
+        function copyText(text, btnElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btnElement.innerText;
+                btnElement.innerText = 'คัดลอกแล้ว!';
+                btnElement.style.background = '#00ff88';
+                btnElement.style.color = '#000';
+                
+                // คืนค่าปุ่มกลับเป็นเหมือนเดิมหลังผ่านไป 2 วินาที
+                setTimeout(() => {
+                    btnElement.innerText = originalText;
+                    btnElement.style.background = 'rgba(255,255,255,0.1)';
+                    btnElement.style.color = 'var(--text-light)';
+                }, 2000);
+            });
+        }
+
+        async function loadHistory() {
+            const userStr = localStorage.getItem('user');
+            const list = document.getElementById('history-list');
+
+            if (!userStr) {
+                alert('กรุณาล็อกอินเพื่อดูประวัติการซื้อครับ');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const user = JSON.parse(userStr);
+            document.getElementById('display-email').innerText = user.email;
+
+            try {
+                const response = await fetch(`${API_URL}/history?user_id=${user.id}`);
+                const result = await response.json();
+
+                list.innerHTML = ''; 
+
+                if (result.status === 'success') {
+                    if (result.data.length === 0) {
+                        list.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">ยังไม่มีประวัติการซื้อสินค้า</td></tr>';
+                        return;
+                    }
+
+                    result.data.forEach(item => {
+                        const dateObj = new Date(item.created_at);
+                        const dateStr = dateObj.toLocaleString('th-TH', { 
+                            year: 'numeric', month: 'short', day: 'numeric', 
+                            hour: '2-digit', minute: '2-digit' 
+                        });
+                        
+                        const profileStr = item.profile_name ? item.profile_name : '-';
+                        const pinStr = item.pin_code ? `<span style="color: #00ff88;">(PIN: ${item.pin_code})</span>` : '';
+                        const platformName = item.platform ? item.platform.toUpperCase() : '-';
+
+                        list.innerHTML += `
+                            <tr>
+                                <td style="color: var(--text-muted); font-size: 14px;">${dateStr}</td>
+                                <td style="font-weight: bold;">${platformName}</td>
+                                <td>
+                                    ${item.account_login} 
+                                    <button class="copy-btn" onclick="copyText('${item.account_login}', this)">คัดลอก</button>
+                                </td>
+                                <td>
+                                    ${item.account_password}
+                                    <button class="copy-btn" onclick="copyText('${item.account_password}', this)">คัดลอก</button>
+                                </td>
+                                <td>${profileStr} ${pinStr}</td>
+                                <td>${item.expire_date ? item.expire_date : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    list.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ffb3b3; padding: 30px;">โหลดประวัติไม่สำเร็จ: ${result.message}</td></tr>`;
+                }
+            } catch (error) {
+                console.error("Error loading history:", error);
+                list.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ffb3b3; padding: 30px;">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</td></tr>';
+            }
+        }
+
+        window.onload = loadHistory;
+    </script>
+</body>
+</html>
