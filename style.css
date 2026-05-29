@@ -10,7 +10,8 @@
 
 body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-image: url('YOUR_BACKGROUND_IMAGE_URL'); 
+    /* เปลี่ยนชื่อไฟล์ตรงนี้ให้ตรงกับรูปพื้นหลังของคุณ */
+    background-image: url('4F36D6F4-6C48-4405-BDF3-E06B9EDDAEDF.png'); 
     background-color: var(--bg-color);
     background-size: cover;
     background-position: center top; 
