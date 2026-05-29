@@ -4,8 +4,8 @@ import os
 import requests
 
 app = Flask(__name__)
-# เปิด CORS ให้หน้าเว็บ Frontend ของคุณเรียกใช้ API นี้ได้
-CORS(app)
+# บังคับเปิด CORS ให้ครอบคลุมทุกเส้นทางและทุก Method อย่างเด็ดขาด
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['GET'])
 def home():
@@ -13,14 +13,12 @@ def home():
 
 @app.route('/check-products', methods=['GET'])
 def check_products():
-    # ดึงค่าคีย์ที่ตั้งไว้ใน Render
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
 
     if not supabase_url or not supabase_key:
         return jsonify({'error': 'Server configuration missing'}), 500
 
-    # ยิงไปดึงข้อมูลสินค้าที่ว่างอยู่จาก Supabase
     endpoint = f"{supabase_url}/rest/v1/products?status=eq.available&select=*"
     headers = {
         "apikey": supabase_key,
@@ -30,18 +28,18 @@ def check_products():
 
     try:
         response = requests.get(endpoint, headers=headers)
-        response.raise_for_status() # เช็คว่า Error ไหม
+        response.raise_for_status()
         return jsonify({'status': 'success', 'data': response.json()})
     except requests.exceptions.RequestException as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-    
+
 @app.route('/buy', methods=['POST', 'OPTIONS'])
 def buy_product():
-    # 1. จัดการกับคำขอ Preflight ของระบบ CORS (อนุญาตให้ผ่านได้เลย)
+    # 1. จัดการกับคำขอ Preflight ของระบบ CORS
     if request.method == 'OPTIONS':
         return '', 200
 
-    # 2. เริ่มขั้นตอนรับคำสั่งซื้อ (ของเดิม)
+    # 2. เริ่มขั้นตอนรับคำสั่งซื้อ
     data = request.json
     platform = data.get('platform')
 
@@ -59,7 +57,6 @@ def buy_product():
     }
 
     try:
-        # ค้นหาสินค้าที่สถานะว่างอยู่ (available) มา 1 รายการ
         get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&status=eq.available&limit=1"
         res = requests.get(get_url, headers=headers)
         res.raise_for_status()
@@ -71,7 +68,6 @@ def buy_product():
         target_product = products[0]
         product_id = target_product['id']
         
-        # พยายามจองรหัสนี้ โดยสั่งเปลี่ยนสถานะเป็น 'sold'
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{product_id}&status=eq.available"
         update_data = {"status": "sold"}
         
@@ -84,7 +80,6 @@ def buy_product():
             
         purchased_account = updated_rows[0]
         
-        # จัดเตรียมข้อมูลใบเสร็จ
         receipt = {
             "platform": purchased_account['platform'],
             "login": purchased_account['account_login'],
@@ -99,6 +94,5 @@ def buy_product():
     except requests.exceptions.RequestException as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# คำสั่งสำหรับรันเซิร์ฟเวอร์
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
