@@ -90,7 +90,8 @@ def login():
         if check_password_hash(user['password_hash'], password):
             secret = os.environ.get("JWT_SECRET", "deuxmoon2026")
             token = jwt.encode({'user_id': user['id'], 'email': user['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)}, secret, algorithm="HS256")
-            # เพิ่ม role ส่งกลับไปให้หน้าเว็บ
+            
+            # ส่งค่า role กลับไปให้หน้าเว็บด้วย เพื่อเช็คสถานะแม่ค้า
             user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal')}
             return jsonify({'status': 'success', 'token': token, 'data': user_data})
         else:
@@ -115,7 +116,7 @@ def buy_product(current_user_id):
         current_credit = float(user['credit_balance'])
         user_role = user.get('role', 'normal')
 
-        # [ส่วนที่ขาดไป] ต้องค้นหาสินค้าในสต็อกก่อนนำมาคิดราคา
+        # ค้นหาสินค้าจากสต็อก โดยตัดคิวอันเก่าสุดออกไปให้ลูกค้าก่อน (FIFO: order=id.asc)
         get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&order=id.asc&limit=1"
         res = requests.get(get_url, headers=headers)
         products = res.json()
@@ -136,25 +137,21 @@ def buy_product(current_user_id):
         if current_credit < price: return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
        # --- ระบบคำนวณวันหมดอายุอัตโนมัติแบบใหม่ ---
-        tz = datetime.timezone(datetime.timedelta(hours=7)) # เวลาไทย
+        tz = datetime.timezone(datetime.timedelta(hours=7)) 
         now = datetime.datetime.now(tz)
         duration = int(duration_days)
 
         if duration == 1:
-            # แบบ 1 วัน: บวก 24 ชั่วโมง และเก็บเวลาแบบเป๊ะๆ (วินาที)
             expire_time = now + datetime.timedelta(days=1)
             formatted_expire = expire_time.strftime('%Y-%m-%d %H:%M:%S')
         else:
-            # แบบหลายวัน (7, 30, 60 วัน ฯลฯ)
-            # ถ้าลูกค้าซื้อช่วง 22.00 - 23.59 ให้นับเต็มจำนวนวัน (บวก 7 หรือ 30)
             if 22 <= now.hour <= 23:
                 days_to_add = duration
-            # ถ้าซื้อเวลาปกติ (00.00 - 21.59) ให้หักออก 1 วัน (บวก 6 หรือ 29)
             else:
                 days_to_add = duration - 1
             
             expire_time = now + datetime.timedelta(days=days_to_add)
-            formatted_expire = expire_time.strftime('%Y-%m-%d') # เก็บเฉพาะวันที่
+            formatted_expire = expire_time.strftime('%Y-%m-%d')
         
         # อัปเดตสถานะและใส่วันหมดอายุลงในตาราง products
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{target_product['id']}&status=eq.available"
@@ -197,13 +194,10 @@ def topup_credit(current_user_id):
     try:
         slipok_url = f"https://api.slipok.com/api/line/apikey/{slipok_branch_id}"
         headers_slipok = {'x-authorization': slipok_api_key}
-        
         files = {'files': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
         
-        # เพิ่มคำสั่ง log ให้เก็บบันทึกรูปลง SlipOK
+        # บันทึก log รูปภาพลง SlipOK
         payload = {'log': 'true'}
-        
-        # แนบ payload ไปพร้อมกับการยิง API
         slipok_res = requests.post(slipok_url, headers=headers_slipok, files=files, data=payload)
         slipok_data = slipok_res.json()
 

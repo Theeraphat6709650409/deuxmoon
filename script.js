@@ -2,7 +2,7 @@ const API_URL = "https://deuxmoon-api.onrender.com";
 let authMode = 'login'; 
 let globalStock = []; 
 
-// --- ระบบแสดง Pop-up สวยงาม (SweetAlert2) ---
+// --- ระบบแสดง Pop-up (SweetAlert2) ---
 function showToast(icon, title) {
     Swal.fire({
         toast: true, position: 'top-end', icon: icon, title: title,
@@ -221,6 +221,7 @@ function handleAppClick(appId, appName) {
     renderPackages(appId, appName);
 }
 
+// ระบบวาดกล่องแพ็กเกจ และคำนวณราคาส่ง
 function renderPackages(configId, title) {
     if (title) document.getElementById('store-title').innerText = title;
     const container = document.getElementById('package-container');
@@ -250,7 +251,7 @@ function renderPackages(configId, title) {
             
             if (isReseller && wholesalePrice) {
                 actualPrice = wholesalePrice;
-                // ถ้าเป็นแม่ค้า ให้ขีดฆ่าราคาปกติ แล้วโชว์ราคาส่งสีแดง
+                // ถ้าเป็นแม่ค้า ให้ขีดฆ่าราคาปกติ แล้วโชว์ราคาส่ง
                 priceDisplay = `<span style="text-decoration: line-through; color: #888; font-size: 15px; margin-right: 8px;">${normalPrice}</span><span style="color: #ff4d4d; font-weight: bold;">${wholesalePrice} THB <span style="font-size:12px; border: 1px solid #ff4d4d; padding: 2px 4px; border-radius: 4px;">ราคาส่ง</span></span>`;
             } else {
                 actualPrice = normalPrice;
@@ -451,4 +452,37 @@ function checkLoginStatus() {
         document.getElementById('menu-guest').style.display = 'flex';
         document.getElementById('menu-logged-in').style.display = 'none';
     }
+}
+
+window.onload = () => { checkLoginStatus(); fetchProducts(); };
+
+// --- เติมเงิน ---
+async function uploadSlip() {
+    const userStr = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (!userStr || !token) return showAlert('warning', 'แจ้งเตือน', 'กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ');
+    
+    const user = JSON.parse(userStr);
+    const fileInput = document.getElementById('slip-upload');
+    if (fileInput.files.length === 0) return showAlert('warning', 'ไม่พบไฟล์', 'กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ');
+
+    const file = fileInput.files[0];
+    const formData = new FormData(); formData.append('slip', file);
+    
+    Swal.fire({
+        title: 'กำลังตรวจสอบสลิป...', text: 'กรุณารอสักครู่',
+        background: '#1a1a2e', color: '#fff',
+        allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        const response = await fetch(`${API_URL}/topup`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+        const result = await response.json();
+        if (result.status === 'success') {
+            await showAlert('success', 'เติมเงินสำเร็จ!', result.message);
+            user.credit_balance = result.new_balance;
+            localStorage.setItem('user', JSON.stringify(user));
+            checkLoginStatus(); fileInput.value = ''; toggleTopup();
+        } else { showAlert('error', 'ตรวจสลิปไม่ผ่าน', result.message); }
+    } catch (error) { showAlert('error', 'ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
 }
