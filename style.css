@@ -327,8 +327,8 @@ body {
         min-height: 110px; /* ลดความสูงกล่องลง */
     }
     .app-icon {
-        width: 80px; /* ย่อขนาดกรอบโลโก้ลงให้พอดีมือถือ */
-        height: 80px;
+        width: 100px; /* ย่อขนาดกรอบโลโก้ลงให้พอดีมือถือ */
+        height: 100px;
         margin-bottom: 10px;
         border-radius: 14px;
     }
