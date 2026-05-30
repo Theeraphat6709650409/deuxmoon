@@ -91,25 +91,30 @@ body {
 }
 
 /* --- Product Grid --- */
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+.product-container {
+    display: flex;
+    flex-wrap: wrap; /* สั่งให้กล่องปัดขึ้นบรรทัดใหม่ได้ถ้าจอแคบ */
+    justify-content: center; /* จัดให้กล่องทั้งหมดอยู่กึ่งกลาง */
+    gap: 20px; /* ระยะห่างระหว่างกล่อง */
+    margin-top: 20px;
 }
 
 .product-card {
-    background-color: var(--dark-glass);
-    backdrop-filter: blur(12px);
+    background: var(--dark-glass);
     border: 1px solid var(--dark-border);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 25px 20px;
     text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+    width: 100%;
+    max-width: 280px; /* จุดสำคัญ: บังคับความกว้างสูงสุดไม่ให้กล่องยืดเกินไป */
+    box-sizing: border-box;
+    transition: 0.3s;
 }
 
 .product-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border-color: #ffb74d;
+    box-shadow: 0 5px 15px rgba(255, 183, 77, 0.15);
 }
 
 .product-logo {

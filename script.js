@@ -40,20 +40,20 @@ const packages = {
     ],
     'iqiyi': [
         { p: 'iqiyi_private', d: 30, label: 'บัญชีส่วนตัว' },
-        { p: 'iqiyi_share2', d: 30, label: 'หาร 2' },
-        { p: 'iqiyi_share3', d: 30, label: 'หาร 3' },
-        { p: 'iqiyi_share4', d: 30, label: 'หาร 4' }
+        { p: 'iqiyi_share2', d: 30, label: '30 วัน (หาร 2)' },
+        { p: 'iqiyi_share3', d: 30, label: '30 วัน (หาร 3)' },
+        { p: 'iqiyi_share4', d: 30, label: '30 วัน (หาร 4)' }
     ],
     'wetv': [
         { p: 'wetv_private', d: 30, label: 'บัญชีส่วนตัว' },
-        { p: 'wetv_share2', d: 30, label: 'หาร 2' },
-        { p: 'wetv_share3', d: 30, label: 'หาร 3' },
-        { p: 'wetv_share4', d: 30, label: 'หาร 4' }
+        { p: 'wetv_share2', d: 30, label: '30 วัน (หาร 2)' },
+        { p: 'wetv_share3', d: 30, label: '30 วัน (หาร 3)' },
+        { p: 'wetv_share4', d: 30, label: '30 วัน (หาร 4)' }
     ],
     'viu': [
         { p: 'viu_private', d: 30, label: 'บัญชีส่วนตัว' },
-        { p: 'viu_share3', d: 30, label: 'หาร 3' },
-        { p: 'viu_share4', d: 30, label: 'หาร 4' }
+        { p: 'viu_share3', d: 30, label: '30 วัน (หาร 3)' },
+        { p: 'viu_share4', d: 30, label: '30 วัน (หาร 4)' }
     ],
     'prime': [
         { p: 'prime_share3', d: 7, label: '7 วัน (หาร 3)' },
