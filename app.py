@@ -116,8 +116,8 @@ def buy_product(current_user_id):
         current_credit = float(user['credit_balance'])
         user_role = user.get('role', 'normal')
 
-        # ค้นหาสินค้าจากสต็อก โดยตัดคิวอันเก่าสุดออกไปให้ลูกค้าก่อน (FIFO: order=id.asc)
-        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&order=id.asc&limit=1"
+        # จัดเรียงตามบัญชี (account_login) -> ตามด้วยชื่อจอ (profile_name) -> และลำดับเก่าใหม่ (id)
+        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&order=account_login.asc,profile_name.asc,id.asc&limit=1"
         res = requests.get(get_url, headers=headers)
         products = res.json()
         
