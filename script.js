@@ -228,20 +228,45 @@ function renderPackages(configId, title) {
     const packList = packages[configId];
     if (!packList) return;
 
+    // เช็คว่าลูกค้าเป็นแม่ค้าหรือไม่
+    const userStr = localStorage.getItem('user');
+    let isReseller = false;
+    if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.role === 'reseller') isReseller = true;
+    }
+
     packList.forEach(pack => {
         const availableItems = globalStock.filter(item => item.platform === pack.p && parseInt(item.duration_days) === pack.d);
         const count = availableItems.length;
-        const price = count > 0 ? parseFloat(availableItems[0].price) : '-';
+        
+        let priceDisplay = '-';
+        let actualPrice = 0;
+
+        if (count > 0) {
+            const sampleItem = availableItems[0];
+            const normalPrice = parseFloat(sampleItem.price);
+            const wholesalePrice = sampleItem.wholesale_price ? parseFloat(sampleItem.wholesale_price) : null;
+            
+            if (isReseller && wholesalePrice) {
+                actualPrice = wholesalePrice;
+                // ถ้าเป็นแม่ค้า ให้ขีดฆ่าราคาปกติ แล้วโชว์ราคาส่งสีแดง
+                priceDisplay = `<span style="text-decoration: line-through; color: #888; font-size: 15px; margin-right: 8px;">${normalPrice}</span><span style="color: #ff4d4d; font-weight: bold;">${wholesalePrice} THB <span style="font-size:12px; border: 1px solid #ff4d4d; padding: 2px 4px; border-radius: 4px;">ราคาส่ง</span></span>`;
+            } else {
+                actualPrice = normalPrice;
+                priceDisplay = `${normalPrice} THB`;
+            }
+        }
 
         let btnHtml = count > 0 
-            ? `<button class="btn-buy" style="background: #007bff; border: none;" onclick="buyProduct('${pack.p}', ${pack.d}, ${price}, '${title} - ${pack.label}')">ซื้อเลย</button>`
+            ? `<button class="btn-buy" style="background: #007bff; border: none;" onclick="buyProduct('${pack.p}', ${pack.d}, ${actualPrice}, '${title} - ${pack.label}')">ซื้อเลย</button>`
             : `<button class="btn-buy" style="background: #444; color: #888; border: 1px solid #555; cursor: not-allowed;" disabled>สินค้าหมด</button>`;
 
         container.innerHTML += `
             <div class="product-card">
                 <div class="product-name" style="font-size: 16px; margin-bottom: 5px;">${pack.label}</div>
                 <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">พร้อมส่ง: ${count} รายการ</div>
-                <div class="product-price" style="font-size: 20px;">${price !== '-' ? price + ' THB' : ''}</div>
+                <div class="product-price" style="font-size: 20px;">${priceDisplay}</div>
                 ${btnHtml}
             </div>
         `;
@@ -417,43 +442,13 @@ function checkLoginStatus() {
         const user = JSON.parse(userStr);
         document.getElementById('menu-guest').style.display = 'none';
         document.getElementById('menu-logged-in').style.display = 'flex';
-        document.getElementById('display-email').innerText = user.email;
+        
+        // เพิ่มป้ายกำกับ [แม่ค้า] บนแถบเมนู
+        let roleBadge = user.role === 'reseller' ? ' <span style="color:#ffb74d; font-size:12px; border: 1px solid #ffb74d; padding: 2px 5px; border-radius: 4px; margin-left: 5px;">ตัวแทนจำหน่าย</span>' : '';
+        document.getElementById('display-email').innerHTML = user.email + roleBadge;
         document.getElementById('credit-display').innerText = user.credit_balance;
     } else {
         document.getElementById('menu-guest').style.display = 'flex';
         document.getElementById('menu-logged-in').style.display = 'none';
     }
-}
-
-window.onload = () => { checkLoginStatus(); fetchProducts(); };
-
-// --- เติมเงิน ---
-async function uploadSlip() {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (!userStr || !token) return showAlert('warning', 'แจ้งเตือน', 'กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ');
-    
-    const user = JSON.parse(userStr);
-    const fileInput = document.getElementById('slip-upload');
-    if (fileInput.files.length === 0) return showAlert('warning', 'ไม่พบไฟล์', 'กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ');
-
-    const file = fileInput.files[0];
-    const formData = new FormData(); formData.append('slip', file);
-    
-    Swal.fire({
-        title: 'กำลังตรวจสอบสลิป...', text: 'กรุณารอสักครู่',
-        background: '#1a1a2e', color: '#fff',
-        allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-        const response = await fetch(`${API_URL}/topup`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-        const result = await response.json();
-        if (result.status === 'success') {
-            await showAlert('success', 'เติมเงินสำเร็จ!', result.message);
-            user.credit_balance = result.new_balance;
-            localStorage.setItem('user', JSON.stringify(user));
-            checkLoginStatus(); fileInput.value = ''; toggleTopup();
-        } else { showAlert('error', 'ตรวจสลิปไม่ผ่าน', result.message); }
-    } catch (error) { showAlert('error', 'ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
 }

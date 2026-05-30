@@ -90,7 +90,8 @@ def login():
         if check_password_hash(user['password_hash'], password):
             secret = os.environ.get("JWT_SECRET", "deuxmoon2026")
             token = jwt.encode({'user_id': user['id'], 'email': user['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)}, secret, algorithm="HS256")
-            user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance']}
+            # เพิ่ม role ส่งกลับไปให้หน้าเว็บ
+            user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal')}
             return jsonify({'status': 'success', 'token': token, 'data': user_data})
         else:
             return jsonify({'status': 'error', 'message': 'รหัสผ่านไม่ถูกต้อง'}), 401
@@ -112,14 +113,25 @@ def buy_product(current_user_id):
         user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers)
         user = user_res.json()[0]
         current_credit = float(user['credit_balance'])
+        user_role = user.get('role', 'normal')
 
-        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&limit=1"
+        # [ส่วนที่ขาดไป] ต้องค้นหาสินค้าในสต็อกก่อนนำมาคิดราคา
+        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&order=id.asc&limit=1"
         res = requests.get(get_url, headers=headers)
         products = res.json()
         
         if not products: return jsonify({'status': 'error', 'message': 'สินค้าหมดชั่วคราว'}), 404
         target_product = products[0]
-        price = float(target_product['price'])
+        
+        # --- ระบบคำนวณราคาส่ง ---
+        normal_price = float(target_product['price'])
+        wholesale_price = target_product.get('wholesale_price')
+        
+        if user_role == 'reseller' and wholesale_price is not None and str(wholesale_price).strip() != "":
+            price = float(wholesale_price)
+        else:
+            price = normal_price
+        # ----------------------
 
         if current_credit < price: return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
