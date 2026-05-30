@@ -1,6 +1,22 @@
 const API_URL = "https://deuxmoon-api.onrender.com";
 let authMode = 'login'; 
-let globalStock = []; // ตัวแปรเก็บสต็อกสินค้าทั้งหมดที่ดึงมาจากฐานข้อมูล
+let globalStock = []; 
+
+// --- ระบบแสดง Pop-up สวยงาม (SweetAlert2) ---
+function showToast(icon, title) {
+    Swal.fire({
+        toast: true, position: 'top-end', icon: icon, title: title,
+        showConfirmButton: false, timer: 2000, timerProgressBar: true,
+        background: '#1a1a2e', color: '#fff'
+    });
+}
+
+function showAlert(icon, title, text) {
+    return Swal.fire({
+        icon: icon, title: title, text: text,
+        background: '#1a1a2e', color: '#fff', confirmButtonColor: '#00dc5a'
+    });
+}
 
 // แทนที่ตัวแปร appList เดิมด้วยชุดข้อมูลที่มีลิงก์โลโก้จริง
 const appList = [
@@ -98,7 +114,7 @@ const packages = {
     ]
 };
 
-// --- ควบคุมการแสดงผล UI พื้นฐาน ---
+// --- ควบคุม UI ---
 function toggleTopup() {
     const store = document.getElementById('store-section');
     const topup = document.getElementById('topup-section');
@@ -136,37 +152,34 @@ function updateAuthUI() {
         btnLogin.style.display = 'none'; btnRegister.style.display = 'block'; btnReset.style.display = 'none';
         switchText.innerText = 'มีบัญชีแล้ว? กดที่นี่เพื่อเข้าสู่ระบบ';
         forgotText.style.display = 'none'; passInput.placeholder = 'ตั้งรหัสผ่าน'; pinInput.style.display = 'block'; 
-        pinInput.placeholder = 'ตั้งรหัส PIN 4 หลัก (ใช้ตอนลืมรหัสผ่าน)';
+        pinInput.placeholder = 'ตั้งรหัส PIN 4 หลัก';
     } else if (authMode === 'reset') {
         title.innerText = 'รีเซ็ตรหัสผ่าน';
         btnLogin.style.display = 'none'; btnRegister.style.display = 'none'; btnReset.style.display = 'block';
         switchText.innerText = 'กลับไปหน้าเข้าสู่ระบบ';
         forgotText.style.display = 'none'; passInput.placeholder = 'ตั้งรหัสผ่านใหม่'; pinInput.style.display = 'block'; 
-        pinInput.placeholder = 'กรอกรหัส PIN 4 หลักเพื่อยืนยัน';
+        pinInput.placeholder = 'กรอกรหัส PIN เพื่อยืนยัน';
     }
 }
 
-// --- โหลดข้อมูลสต็อกสินค้า ---
+// --- โหลดข้อมูลสต็อก ---
 async function fetchProducts() {
     try {
         const response = await fetch(`${API_URL}/check-products`);
         const result = await response.json();
         if (result.status === 'success') {
-            globalStock = result.data;
-            initStore(); // เริ่มสร้างหน้าต่างเลือกแอป
+            globalStock = result.data; initStore();
         } else {
-            document.getElementById('app-grid').innerHTML = `<p style="color: #ffb3b3;">เกิดข้อผิดพลาด: ${result.message}</p>`;
+            document.getElementById('app-grid').innerHTML = `<p style="color: #ffb3b3;">ข้อผิดพลาด: ${result.message}</p>`;
         }
     } catch (error) {
         document.getElementById('app-grid').innerHTML = `<p style="color: #ffb3b3;">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้</p>`;
     }
 }
 
-// นำฟังก์ชันนี้ไปแทนที่ initStore เดิม เพื่อให้ระบบอ่านแท็ก <img> แทนตัวอักษร
 function initStore() {
     const grid = document.getElementById('app-grid');
     grid.innerHTML = '';
-    
     appList.forEach(app => {
         grid.innerHTML += `
             <div class="app-card" onclick="handleAppClick('${app.id}', '${app.name}')">
@@ -183,7 +196,6 @@ function backToMainMenu() {
     document.getElementById('store-title').innerText = 'เลือกแอปที่ต้องการ';
 }
 
-// นำฟังก์ชันนี้ไปแทนที่ handleAppClick เดิม เพื่ออัปเดตโลโก้ Netflix ในเมนูย่อย
 function handleAppClick(appId, appName) {
     document.getElementById('app-grid').style.display = 'none';
     document.getElementById('package-section').style.display = 'block';
@@ -191,49 +203,41 @@ function handleAppClick(appId, appName) {
     const container = document.getElementById('package-container');
     container.innerHTML = '';
 
-    // กรณีพิเศษสำหรับ Netflix (บังคับเลือกอุปกรณ์ก่อน)
     if (appId === 'netflix') {
         container.innerHTML = `
             <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                 <div class="product-card" style="cursor:pointer;" onclick="renderPackages('netflix_mobile', 'NETFLIX (มือถือ)')">
-                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg" alt="Netflix Mobile"></div>
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg" alt="Netflix"></div>
                     <div class="product-name">เลือกแพ็กเกจ มือถือ</div>
                 </div>
                 <div class="product-card" style="cursor:pointer;" onclick="renderPackages('netflix_tv', 'NETFLIX (ทีวี)')">
-                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg" alt="Netflix TV"></div>
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg" alt="Netflix"></div>
                     <div class="product-name">เลือกแพ็กเกจ ทีวี</div>
                 </div>
             </div>
         `;
         return;
     }
-
     renderPackages(appId, appName);
 }
 
-// แสดงรายการย่อยตาม Config
 function renderPackages(configId, title) {
     if (title) document.getElementById('store-title').innerText = title;
     const container = document.getElementById('package-container');
     container.innerHTML = '';
-
     const packList = packages[configId];
     if (!packList) return;
 
     packList.forEach(pack => {
-        // ค้นหาสินค้าในสต็อกที่ข้อมูลตรงกับฐานข้อมูล
         const availableItems = globalStock.filter(item => item.platform === pack.p && parseInt(item.duration_days) === pack.d);
         const count = availableItems.length;
         const price = count > 0 ? parseFloat(availableItems[0].price) : '-';
 
-        let btnHtml = '';
-        if (count > 0) {
-            btnHtml = `<button class="btn-buy" style="background: #007bff; border: none;" onclick="buyProduct('${pack.p}', ${pack.d}, ${price}, '${title} - ${pack.label}')">ซื้อเลย</button>`;
-        } else {
-            btnHtml = `<button class="btn-buy" style="background: #444; color: #888; border: 1px solid #555; cursor: not-allowed;" disabled>สินค้าหมด</button>`;
-        }
+        let btnHtml = count > 0 
+            ? `<button class="btn-buy" style="background: #007bff; border: none;" onclick="buyProduct('${pack.p}', ${pack.d}, ${price}, '${title} - ${pack.label}')">ซื้อเลย</button>`
+            : `<button class="btn-buy" style="background: #444; color: #888; border: 1px solid #555; cursor: not-allowed;" disabled>สินค้าหมด</button>`;
 
-        const cardHtml = `
+        container.innerHTML += `
             <div class="product-card">
                 <div class="product-name" style="font-size: 16px; margin-bottom: 5px;">${pack.label}</div>
                 <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">พร้อมส่ง: ${count} รายการ</div>
@@ -241,30 +245,43 @@ function renderPackages(configId, title) {
                 ${btnHtml}
             </div>
         `;
-        container.innerHTML += cardHtml;
     });
 }
 
-// --- ฟังก์ชันการซื้อสินค้า ---
+// --- ฟังก์ชันซื้อสินค้า ---
 async function buyProduct(platform, duration_days, price, displayName) {
     const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
     if (!userStr || !token) {
-        alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อครับ');
+        await showAlert('warning', 'แจ้งเตือน', 'กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อครับ');
         openAuthModal();
         return;
     }
 
     const user = JSON.parse(userStr);
     if (parseFloat(user.credit_balance) < price) {
-        alert('ยอดเงินของคุณไม่เพียงพอ กรุณาเติมเงินก่อนครับ');
+        await showAlert('error', 'ยอดเงินไม่เพียงพอ', 'กรุณาเติมเงินก่อนทำรายการสั่งซื้อครับ');
         toggleTopup();
         return;
     }
 
-    const confirmBuy = confirm(`ยืนยันการสั่งซื้อแพ็กเกจ ${displayName}\nราคา ${price} บาท หรือไม่?`);
-    if (!confirmBuy) return;
+    const confirmBuy = await Swal.fire({
+        title: 'ยืนยันการสั่งซื้อ',
+        html: `แพ็กเกจ <b>${displayName}</b><br>ราคา <b>${price}</b> บาท`,
+        icon: 'question',
+        background: '#1a1a2e', color: '#fff',
+        showCancelButton: true,
+        confirmButtonColor: '#00dc5a', cancelButtonColor: '#ff4d4d',
+        confirmButtonText: 'ยืนยันการซื้อ', cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmBuy.isConfirmed) return;
+
+    Swal.fire({
+        title: 'กำลังทำรายการ...', background: '#1a1a2e', color: '#fff',
+        allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }
+    });
 
     try {
         const response = await fetch(`${API_URL}/buy`, {
@@ -275,19 +292,18 @@ async function buyProduct(platform, duration_days, price, displayName) {
         const result = await response.json();
 
         if (result.status === 'success') {
+            Swal.close();
             user.credit_balance = result.remaining_credit;
             localStorage.setItem('user', JSON.stringify(user));
             checkLoginStatus();
             
             const data = result.data;
-            // แปลงรูปแบบวันที่จากสากล (YYYY-MM-DD) เป็นรูปแบบ EXP DD-MM-YYYY 
             let displayExpire = data.expire_date || '-';
             if (displayExpire !== '-') {
-                let dateParts = displayExpire.split(' '); // แยกวันที่กับเวลาออกจากกัน
-                let d = dateParts[0].split('-'); // แยก ปี-เดือน-วัน
+                let dateParts = displayExpire.split(' ');
+                let d = dateParts[0].split('-'); 
                 if (d.length === 3) {
                     let timeStr = dateParts[1] ? ' ' + dateParts[1] : '';
-                    // นำมาประกอบใหม่ตามสูตร Excel
                     displayExpire = `EXP ${d[2]}-${d[1]}-${d[0]}${timeStr}`;
                 }
             }
@@ -300,7 +316,6 @@ async function buyProduct(platform, duration_days, price, displayName) {
             receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile_name || data.profile || '-'}</span></div>`;
             if (data.pin_code || data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin_code || data.pin}</span></div>`;
             receiptHtml += `<div>วันหมดอายุ: <span>${displayExpire}</span></div>
-                
                 <div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">
                     <strong style="color: #ff8080;">กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.-</strong><br><br>
                     - ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที<br>
@@ -311,61 +326,76 @@ async function buyProduct(platform, duration_days, price, displayName) {
                     - หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน<br><br>
                     <span style="color: #ffb74d;">=- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด</span>
                 </div>
-                <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
-                <div style="text-align: center; font-size: 14px; color: var(--text-muted);">กรุณาก๊อปปี้หรือแคปหน้าจอนี้เก็บไว้ครับ</div>
             `;
             document.getElementById('receipt-details').innerHTML = receiptHtml;
             document.getElementById('receipt-modal').style.display = 'flex';
             
-            fetchProducts(); // โหลดข้อมูลสต็อกใหม่เพื่ออัปเดตจำนวนคงเหลือ
+            fetchProducts(); 
         } else {
-            alert(`ไม่สามารถซื้อได้: ${result.message}`);
+            showAlert('error', 'ทำรายการไม่สำเร็จ', result.message);
         }
     } catch (error) {
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        showAlert('error', 'ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
     }
 }
 
-// --- ฟังก์ชัน Auth พื้นฐาน ---
+// --- ฟังก์ชัน Auth ---
 async function register() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
     const pin = document.getElementById('auth-pin').value;
     
-    if (!email || !password || !pin) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-    if (pin.length !== 4 || isNaN(pin)) return alert('กรุณาตั้งรหัส PIN เป็นตัวเลข 4 หลักเท่านั้น');
+    if (!email || !password || !pin) return showAlert('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน');
+    if (pin.length !== 4 || isNaN(pin)) return showAlert('warning', 'รูปแบบไม่ถูกต้อง', 'กรุณาตั้งรหัส PIN เป็นตัวเลข 4 หลักเท่านั้น');
     
-    const res = await fetch(`${API_URL}/register`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, recovery_pin: pin })
-    });
-    const result = await res.json();
-    alert(result.message);
-    if (result.status === 'success') { authMode = 'login'; updateAuthUI(); document.getElementById('auth-pin').value = ''; }
+    Swal.fire({ title: 'กำลังโหลด...', background: '#1a1a2e', color: '#fff', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, recovery_pin: pin })
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            await showAlert('success', 'สำเร็จ!', result.message);
+            authMode = 'login'; updateAuthUI(); document.getElementById('auth-pin').value = '';
+        } else { showAlert('error', 'ผิดพลาด', result.message); }
+    } catch (e) { showAlert('error', 'ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว'); }
 }
 
 async function login() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    const res = await fetch(`${API_URL}/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    const result = await res.json();
-    if (result.status === 'success') {
-        localStorage.setItem('user', JSON.stringify(result.data));
-        localStorage.setItem('token', result.token); 
-        closeAuthModal(); checkLoginStatus(); alert('เข้าสู่ระบบสำเร็จ!');
-    } else { alert(result.message); }
+    
+    Swal.fire({ title: 'กำลังโหลด...', background: '#1a1a2e', color: '#fff', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    try {
+        const res = await fetch(`${API_URL}/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            localStorage.setItem('user', JSON.stringify(result.data));
+            localStorage.setItem('token', result.token); 
+            closeAuthModal(); checkLoginStatus(); 
+            showToast('success', 'เข้าสู่ระบบสำเร็จ!');
+        } else { showAlert('error', 'เข้าสู่ระบบไม่สำเร็จ', result.message); }
+    } catch (e) { showAlert('error', 'ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว'); }
 }
 
-function logout() { localStorage.removeItem('user'); localStorage.removeItem('token'); checkLoginStatus(); alert('ออกจากระบบแล้ว'); }
+function logout() { 
+    localStorage.removeItem('user'); localStorage.removeItem('token'); 
+    checkLoginStatus(); showToast('success', 'ออกจากระบบแล้ว'); 
+}
 
 async function resetPassword() {
     const email = document.getElementById('auth-email').value;
     const newPassword = document.getElementById('auth-password').value;
     const pin = document.getElementById('auth-pin').value;
-    if (!email || !newPassword || !pin) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+    if (!email || !newPassword || !pin) return showAlert('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน');
+
+    Swal.fire({ title: 'กำลังโหลด...', background: '#1a1a2e', color: '#fff', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
         const res = await fetch(`${API_URL}/reset-password`, {
@@ -373,9 +403,12 @@ async function resetPassword() {
             body: JSON.stringify({ email: email, new_password: newPassword, recovery_pin: pin })
         });
         const result = await res.json();
-        alert(result.message);
-        if (result.status === 'success') { authMode = 'login'; updateAuthUI(); document.getElementById('auth-password').value = ''; document.getElementById('auth-pin').value = ''; }
-    } catch (e) { alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
+        if (result.status === 'success') { 
+            await showAlert('success', 'สำเร็จ!', result.message);
+            authMode = 'login'; updateAuthUI(); 
+            document.getElementById('auth-password').value = ''; document.getElementById('auth-pin').value = ''; 
+        } else { showAlert('error', 'ผิดพลาด', result.message); }
+    } catch (e) { showAlert('error', 'ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
 }
 
 function checkLoginStatus() {
@@ -394,27 +427,33 @@ function checkLoginStatus() {
 
 window.onload = () => { checkLoginStatus(); fetchProducts(); };
 
+// --- เติมเงิน ---
 async function uploadSlip() {
     const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    if (!userStr || !token) return alert('กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ');
+    if (!userStr || !token) return showAlert('warning', 'แจ้งเตือน', 'กรุณาเข้าสู่ระบบก่อนทำการเติมเงินครับ');
     
     const user = JSON.parse(userStr);
     const fileInput = document.getElementById('slip-upload');
-    if (fileInput.files.length === 0) return alert('กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ');
+    if (fileInput.files.length === 0) return showAlert('warning', 'ไม่พบไฟล์', 'กรุณาเลือกไฟล์ภาพสลิปโอนเงินก่อนครับ');
 
     const file = fileInput.files[0];
     const formData = new FormData(); formData.append('slip', file);
-    alert('ระบบกำลังตรวจสอบสลิปโอนเงิน กรุณารอสักครู่ครับ...');
+    
+    Swal.fire({
+        title: 'กำลังตรวจสอบสลิป...', text: 'กรุณารอสักครู่',
+        background: '#1a1a2e', color: '#fff',
+        allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }
+    });
 
     try {
         const response = await fetch(`${API_URL}/topup`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
         const result = await response.json();
         if (result.status === 'success') {
-            alert(result.message);
+            await showAlert('success', 'เติมเงินสำเร็จ!', result.message);
             user.credit_balance = result.new_balance;
             localStorage.setItem('user', JSON.stringify(user));
             checkLoginStatus(); fileInput.value = ''; toggleTopup();
-        } else { alert(`เติมเงินไม่สำเร็จ: ${result.message}`); }
-    } catch (error) { alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
+        } else { showAlert('error', 'ตรวจสลิปไม่ผ่าน', result.message); }
+    } catch (error) { showAlert('error', 'ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
 }

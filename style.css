@@ -302,6 +302,113 @@ body {
 }
 
 /* =========================================
+   หน้าประวัติการสั่งซื้อ (History Page)
+   ========================================= */
+.history-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+.history-card {
+    background: var(--dark-glass);
+    border: 1px solid var(--dark-border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #aaa;
+}
+
+.history-header .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+}
+
+.history-header .avatar {
+    width: 24px;
+    height: 24px;
+    background: #00dc5a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.history-body {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.history-logo {
+    width: 55px;
+    height: 55px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 6px;
+    box-sizing: border-box;
+    object-fit: contain;
+}
+
+.history-info {
+    flex: 1;
+}
+
+.history-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.history-sub {
+    font-size: 13px;
+    color: #ffb74d;
+}
+
+.btn-view-details {
+    background: rgba(0, 220, 90, 0.15);
+    color: #00DC5A;
+    border: 1px solid rgba(0, 220, 90, 0.3);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.3s;
+    white-space: nowrap;
+}
+
+.btn-view-details:hover {
+    background: #00DC5A;
+    color: #fff;
+}
+
+.history-footer {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    align-items: center;
+}
+
+/* =========================================
    📱 โค้ด Responsive จัดหน้าตาสำหรับมือถือ
    ========================================= */
 @media (max-width: 768px) {

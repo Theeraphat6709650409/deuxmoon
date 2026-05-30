@@ -3,207 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ประวัติการซื้อ - Deuxmoon Store</title>
-    
+    <title>ประวัติการสั่งซื้อ - Deuxmoon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    
-    <style>
-        .history-wrapper {
-            background-color: var(--dark-glass);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--dark-border);
-            border-radius: 16px;
-            padding: 24px;
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--dark-border);
-        }
-        th {
-            color: #ffb74d;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-        
-        .copy-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid var(--dark-border);
-            color: var(--text-light);
-            padding: 4px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-left: 10px;
-            transition: 0.3s;
-        }
-        .copy-btn:hover {
-            background: var(--netflix-btn);
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
+<body style="background-image: url('4F36D6F4-6C48-4405-BDF3-E06B9EDDAEDF.png'); background-size: cover; background-attachment: fixed; background-position: center; margin: 0; color: white; font-family: 'Prompt', sans-serif;">
 
-    <div class="brand">
-            <img src="EAA8607F-0D59-4525-A5EE-4E9736CABD0A.png" alt="Deuxmoon Logo" style="height: 95px; border-radius: 8px; cursor: pointer;" onclick="window.location.href='index.html'">
+    <div class="navbar">
+        <div class="brand">
+            <img src="EAA8607F-0D59-4525-A5EE-4E9736CABD0A.png" alt="Deuxmoon Logo" style="height: 60px; border-radius: 8px; cursor: pointer;" onclick="window.location.href='index.html'">
         </div>
-        
-        <div class="user-menu" id="menu-logged-in">
-            <span id="display-email" style="font-size: 14px; color: var(--text-muted);"></span>
-            <button class="btn-topup" style="background: #333;" onclick="window.location.href='index.html'">กลับหน้าหลัก</button>
-        </div>
-    </nav>
+    </div>
 
-    <div class="container">
-        <h2 class="section-title">ประวัติการซื้อของคุณ</h2>
+    <div class="history-container">
+        <button class="btn-back" onclick="window.location.href='index.html'" style="margin-bottom: 20px;">← กลับหน้าหลัก</button>
+        <h2 class="section-title">ประวัติการสั่งซื้อของคุณ</h2>
         
-        <div class="history-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>วันที่ซื้อ</th>
-                        <th>แพลตฟอร์ม</th>
-                        <th>อีเมลล็อกอิน</th>
-                        <th>รหัสผ่าน</th>
-                        <th>โปรไฟล์ (PIN)</th>
-                        <th>วันหมดอายุ</th>
-                        <th style="text-align: center;">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody id="history-list">
-                    <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
-                            กำลังโหลดข้อมูล...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div id="history-list">
+            <div style="text-align: center; padding: 20px; color: #888;">กำลังโหลดข้อมูล...</div>
+        </div>
+    </div>
+
+    <div id="details-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: #1a1a2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid #00dc5a; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h2 style="color: #00dc5a; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; text-align: center;">รายละเอียดบัญชี</h2>
+            
+            <div id="details-body" style="text-align: left; font-size: 15px; line-height: 1.8; margin-top: 15px; color: white;">
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="copyAll()" style="background: #00dc5a; color: white; border: none; padding: 11px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px; transition: 0.2s;">📋 คัดลอกข้อมูลทั้งหมด</button>
+                <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 6px 0;">
+                    <div style="display: table-cell; width: 50%;">
+                        <button onclick="copyLogin()" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid #555; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px;">👤 คัดลอกบัญชี</button>
+                    </div>
+                    <div style="display: table-cell; width: 50%;">
+                        <button onclick="copyPassword()" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid #555; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px;">🔑 คัดลอกรหัสผ่าน</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="closeDetails()" style="margin-top: 20px; background: #333; color: white; border: 1px solid #555; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 15px;">ปิดหน้าต่าง</button>
         </div>
     </div>
 
     <script>
         const API_URL = "https://deuxmoon-api.onrender.com";
+        let historyData = [];
+        let activeItemIndex = null; 
 
-        // คัดลอกทีละส่วน
-        function copyText(text, btnElement) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = btnElement.innerText;
-                btnElement.innerText = 'คัดลอกแล้ว!';
-                btnElement.style.background = '#00ff88';
-                btnElement.style.color = '#000';
-                
-                setTimeout(() => {
-                    btnElement.innerText = originalText;
-                    btnElement.style.background = 'rgba(255,255,255,0.1)';
-                    btnElement.style.color = 'var(--text-light)';
-                }, 2000);
-            });
-        }
-
-        // คัดลอกแบบจัดเต็ม (ข้อมูล + กฎการใช้งาน)
-        function copyFullData(btnElement, platform, login, password, profile, pin, expire) {
-            const rulesText = `กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- \n\nทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\nไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\nไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n1 จอ = รับชมทีละ 1 อุปกรณ์\nถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี\nหากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n\n=- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
-            
-            let fullText = `แพลตฟอร์ม: ${platform}\n`;
-            fullText += `บัญชี (ล็อกอิน): ${login}\n`;
-            fullText += `รหัสผ่าน: ${password}\n`;
-            fullText += `เข้าใช้งานจอ: ${profile} ${pin ? '(PIN: ' + pin + ')' : ''}\n`;
-            fullText += `วันหมดอายุ: ${expire}\n\n`;
-            fullText += rulesText;
-
-            navigator.clipboard.writeText(fullText).then(() => {
-                const originalText = btnElement.innerText;
-                btnElement.innerText = 'คัดลอกสำเร็จ!';
-                btnElement.style.background = '#00ff88';
-                btnElement.style.color = '#000';
-                
-                setTimeout(() => {
-                    btnElement.innerText = originalText;
-                    btnElement.style.background = 'var(--disney-btn)';
-                    btnElement.style.color = 'white';
-                }, 2000);
+        // ระบบ Toast แจ้งเตือนของ SweetAlert2
+        function showToast(icon, title) {
+            Swal.fire({
+                toast: true, position: 'top-end', icon: icon, title: title,
+                showConfirmButton: false, timer: 2000, timerProgressBar: true,
+                background: '#1a1a2e', color: '#fff'
             });
         }
 
         async function loadHistory() {
+            const token = localStorage.getItem('token');
             const userStr = localStorage.getItem('user');
-            const list = document.getElementById('history-list');
-
-            if (!userStr) {
-                alert('กรุณาล็อกอินเพื่อดูประวัติการซื้อครับ');
-                window.location.href = 'index.html';
+            
+            if (!token || !userStr) {
+                Swal.fire({
+                    icon: 'warning', title: 'กรุณาเข้าสู่ระบบ',
+                    text: 'คุณต้องเข้าสู่ระบบก่อนดูประวัติการสั่งซื้อ',
+                    background: '#1a1a2e', color: '#fff', confirmButtonColor: '#00dc5a'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
                 return;
             }
 
             const user = JSON.parse(userStr);
-            document.getElementById('display-email').innerText = user.email;
+            const userEmail = user.email.split('@')[0];
 
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`${API_URL}/history`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    method: 'GET', headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
 
-                list.innerHTML = ''; 
-
                 if (result.status === 'success') {
-                    if (result.data.length === 0) {
-                        list.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">ยังไม่มีประวัติการซื้อสินค้า</td></tr>';
-                        return;
-                    }
-
-                    result.data.forEach(item => {
-                        const dateObj = new Date(item.created_at);
-                        const dateStr = dateObj.toLocaleString('th-TH', { 
-                            year: 'numeric', month: 'short', day: 'numeric', 
-                            hour: '2-digit', minute: '2-digit' 
-                        });
-                        
-                        const profileStr = item.profile_name ? item.profile_name : '-';
-                        const pinStr = item.pin_code ? `<span style="color: #00ff88;">(PIN: ${item.pin_code})</span>` : '';
-                        const platformName = item.platform ? item.platform.toUpperCase() : '-';
-
-                        list.innerHTML += `
-                            <tr>
-                                <td style="color: var(--text-muted); font-size: 14px;">${dateStr}</td>
-                                <td style="font-weight: bold;">${platformName}</td>
-                                <td>
-                                    ${item.account_login} 
-                                    <button class="copy-btn" onclick="copyText('${item.account_login}', this)">คัดลอก</button>
-                                </td>
-                                <td>
-                                    ${item.account_password}
-                                    <button class="copy-btn" onclick="copyText('${item.account_password}', this)">คัดลอก</button>
-                                </td>
-                                <td>${profileStr} ${pinStr}</td>
-                                <td>${item.expire_date ? item.expire_date : '-'}</td>
-                                <td style="text-align: center;">
-                                    <button class="copy-btn" style="background: var(--disney-btn); color: white; padding: 8px 12px; font-weight: bold; margin-left: 0;" 
-                                    onclick="copyFullData(this, '${platformName}', '${item.account_login}', '${item.account_password}', '${item.profile_name || '-'}', '${item.pin_code || ''}', '${item.expire_date || '-'}')">
-                                        คัดลอกทั้งหมด
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    });
+                    historyData = result.data;
+                    renderHistory(historyData, userEmail);
                 } else {
-                    list.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ffb3b3; padding: 30px;">โหลดประวัติไม่สำเร็จ: ${result.message}</td></tr>`;
+                    document.getElementById('history-list').innerHTML = `<p style="color: #ffb3b3; text-align: center;">เกิดข้อผิดพลาด: ${result.message}</p>`;
                 }
             } catch (error) {
-                console.error("Error loading history:", error);
-                list.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ffb3b3; padding: 30px;">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</td></tr>';
+                document.getElementById('history-list').innerHTML = `<p style="color: #ffb3b3; text-align: center;">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้</p>`;
             }
+        }
+
+        function formatThaiDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const d = date.getDate();
+            const m = months[date.getMonth()];
+            const y = date.getFullYear() + 543;
+            const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            return `${d} ${m} ${y} เวลา ${time} น.`;
+        }
+
+        function getAppInfo(platform, created_at, expire_date) {
+            platform = platform || 'unknown'; 
+            const apps = {
+                'netflix': { name: 'NETFLIX', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
+                'disney': { name: 'DISNEY+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
+                'iqiyi': { name: 'iQIYI', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/IQIYI_logo_(2022).svg' },
+                'wetv': { name: 'WeTV', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/WeTV_logo.svg' },
+                'viu': { name: 'Viu', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Viu_logo.svg' },
+                'prime': { name: 'Prime Video', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_Prime_Video_logo.svg' },
+                'hbo': { name: 'HBO Max', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Max_logo.svg' },
+                'oned': { name: 'OneD', logo: 'https://ui-avatars.com/api/?name=OneD&background=00A1E4&color=fff&font-size=0.33&bold=true' },
+                'ch3': { name: 'Ch3 Plus', logo: 'https://ui-avatars.com/api/?name=Ch3&background=004A8F&color=fff&font-size=0.33&bold=true' },
+                'bilibili': { name: 'Bilibili', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Bilibili_logo.svg' },
+                'spotify': { name: 'Spotify', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Spotify_logo-without-text.svg' },
+                'canva': { name: 'Canva', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Canva_icon_2021.svg' },
+                'monomax': { name: 'Mono Max', logo: 'https://ui-avatars.com/api/?name=Mono&background=E4002B&color=fff&font-size=0.33&bold=true' },
+                'trueid': { name: 'TrueID+', logo: 'https://ui-avatars.com/api/?name=TrueID&background=FF0000&color=fff&font-size=0.33&bold=true' },
+                'chatgpt': { name: 'ChatGPT+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' }
+            };
+
+            let baseApp = platform;
+            let subText = "แพ็กเกจมาตรฐาน";
+
+            if (platform.includes('_')) {
+                const parts = platform.split('_');
+                baseApp = parts[0];
+                const type = parts[1];
+                
+                if (type === 'mobile') subText = 'จอส่วนตัว (มือถือ)';
+                else if (type === 'tv') subText = 'จอส่วนตัว (ทีวี)';
+                else if (type === 'private') subText = 'บัญชีส่วนตัว';
+                else if (type === 'share2') subText = 'หาร 2 ไม่ชน';
+                else if (type === 'share3') subText = 'หาร 3 ชนน้อย';
+                else if (type === 'share4') subText = 'หาร 4';
+                else if (type === 'share5') subText = 'หาร 5';
+                else if (type === 'renew') subText = 'ต่อเมลเดิม';
+                else if (type === 'store') subText = 'เมลร้าน (ไม่ต่ออายุ)';
+            }
+
+            let durationText = "";
+            if (created_at && expire_date) {
+                let days = Math.round((new Date(expire_date) - new Date(created_at)) / (1000 * 60 * 60 * 24));
+                if (days >= 28 && days <= 31) durationText = " 30 วัน";
+                else if (days >= 6 && days <= 8) durationText = " 7 วัน";
+                else if (days === 1 || days === 2) durationText = " 1 วัน";
+                else durationText = ` ${days} วัน`;
+            }
+
+            return {
+                name: (apps[baseApp] ? apps[baseApp].name : platform.toUpperCase()) + durationText,
+                logo: apps[baseApp] ? apps[baseApp].logo : 'https://ui-avatars.com/api/?name=' + platform,
+                subText: subText
+            };
+        }
+
+        function renderHistory(data, username) {
+            const listDiv = document.getElementById('history-list');
+            listDiv.innerHTML = '';
+
+            if (data.length === 0) {
+                listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #888; background: var(--dark-glass); border-radius: 12px;">ยังไม่มีประวัติการสั่งซื้อครับ</div>';
+                return;
+            }
+
+            const initial = username.charAt(0).toUpperCase();
+
+            data.forEach((item, index) => {
+                const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
+                const dateStr = formatThaiDate(item.created_at);
+                const refId = item.id ? String(item.id).substring(0, 8) : '000' + index;
+
+                listDiv.innerHTML += `
+                    <div class="history-card">
+                        <div class="history-header">
+                            <div class="user-badge">
+                                <div class="avatar">${initial}</div>
+                                <span style="color: #e0e0e0; font-weight: 500;">${username}</span>
+                            </div>
+                            <div style="color: #666; font-size: 11px;">Ref: ${refId}</div>
+                        </div>
+                        <div class="history-body">
+                            <img src="${appInfo.logo}" class="history-logo" alt="logo">
+                            <div class="history-info">
+                                <div class="history-title">${appInfo.name}</div>
+                                <div class="history-sub">${appInfo.subText}</div>
+                            </div>
+                            <button class="btn-view-details" onclick="viewDetails(${index})">👁 ดูข้อมูล</button>
+                        </div>
+                        <div class="history-footer">
+                            <span>🕒 ${dateStr}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function viewDetails(index) {
+            activeItemIndex = index; 
+            const item = historyData[index];
+            if (!item) return;
+
+            const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
+            const displayName = appInfo.name;
+            
+            let displayExpire = item.expire_date || '-';
+            if (displayExpire !== '-') {
+                let dateParts = displayExpire.split(' ');
+                let d = dateParts[0].split('-'); 
+                if (d.length === 3) {
+                    let timeStr = dateParts[1] ? ' ' + dateParts[1] : '';
+                    displayExpire = `EXP ${d[2]}-${d[1]}-${d[0]}${timeStr}`;
+                }
+            }
+
+            let receiptHtml = `
+                <div style="margin-bottom: 8px;"><span style="color:#888;">แพลตฟอร์ม:</span> <strong style="color:#fff;">${displayName}</strong></div>
+                <div style="margin-bottom: 8px;"><span style="color:#888;">บัญชี (ล็อกอิน):</span> <strong style="color:#fff;">${item.account_login || '-'}</strong></div>
+            `;
+            if (item.account_password) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสผ่าน:</span> <strong style="color:#00dc5a;">${item.account_password}</strong></div>`;
+            receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">เข้าใช้งานจอ:</span> <strong style="color:#fff;">${item.profile_name || '-'}</strong></div>`;
+            if (item.pin_code) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสเข้าจอ (PIN):</span> <strong style="color:#ffb74d;">${item.pin_code}</strong></div>`;
+            receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">วันหมดอายุ:</span> <strong style="color:#ff4d4d;">${displayExpire}</strong></div>`;
+
+            document.getElementById('details-body').innerHTML = receiptHtml;
+            document.getElementById('details-modal').style.display = 'flex';
+        }
+
+        function closeDetails() {
+            document.getElementById('details-modal').style.display = 'none';
+        }
+
+        function executeCopy(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('success', 'คัดลอกข้อมูลสำเร็จ!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; 
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('success', 'คัดลอกข้อมูลสำเร็จ!');
+            } catch (err) {
+                showToast('error', 'คัดลอกล้มเหลว');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function copyLogin() {
+            const item = historyData[activeItemIndex];
+            if (item && item.account_login) executeCopy(item.account_login);
+        }
+
+        function copyPassword() {
+            const item = historyData[activeItemIndex];
+            if (item && item.account_password) executeCopy(item.account_password);
+        }
+
+        function copyAll() {
+            const item = historyData[activeItemIndex];
+            if (!item) return;
+
+            const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
+            const displayName = appInfo.name;
+            
+            let displayExpire = item.expire_date || '-';
+            if (displayExpire !== '-') {
+                let dateParts = displayExpire.split(' ');
+                let d = dateParts[0].split('-'); 
+                if (d.length === 3) {
+                    let timeStr = dateParts[1] ? ' ' + dateParts[1] : '';
+                    displayExpire = `EXP ${d[2]}-${d[1]}-${d[0]}${timeStr}`;
+                }
+            }
+
+            let textOutput = `แพลตฟอร์ม: ${displayName}\n`;
+            textOutput += `บัญชี (ล็อกอิน): ${item.account_login || '-'}\n`;
+            if (item.account_password) textOutput += `รหัสผ่าน: ${item.account_password}\n`;
+            textOutput += `เข้าใช้งานจอ: ${item.profile_name || '-'}\n`;
+            if (item.pin_code) textOutput += `รหัสเข้าจอ (PIN): ${item.pin_code}\n`;
+            textOutput += `วันหมดอายุ: ${displayExpire}\n\n`;
+            
+            textOutput += `📓กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- 🥺🥓\n \n ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\n ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\n ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n 1 จอ = รับชมทีละ 1 อุปกรณ์\n ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี📺❌\n หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n \n =- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
+
+            executeCopy(textOutput);
         }
 
         window.onload = loadHistory;
