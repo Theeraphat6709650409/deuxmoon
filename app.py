@@ -185,8 +185,14 @@ def topup_credit(current_user_id):
     try:
         slipok_url = f"https://api.slipok.com/api/line/apikey/{slipok_branch_id}"
         headers_slipok = {'x-authorization': slipok_api_key}
+        
         files = {'files': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
-        slipok_res = requests.post(slipok_url, headers=headers_slipok, files=files)
+        
+        # เพิ่มคำสั่ง log ให้เก็บบันทึกรูปลง SlipOK
+        payload = {'log': 'true'}
+        
+        # แนบ payload ไปพร้อมกับการยิง API
+        slipok_res = requests.post(slipok_url, headers=headers_slipok, files=files, data=payload)
         slipok_data = slipok_res.json()
 
         if slipok_res.status_code != 200 or not slipok_data.get('success'):
