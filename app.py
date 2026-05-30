@@ -123,11 +123,26 @@ def buy_product(current_user_id):
 
         if current_credit < price: return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
-        # --- ระบบคำนวณวันหมดอายุอัตโนมัติ (เริ่มนับจากตอนที่กดซื้อ) ---
+       # --- ระบบคำนวณวันหมดอายุอัตโนมัติแบบใหม่ ---
         tz = datetime.timezone(datetime.timedelta(hours=7)) # เวลาไทย
-        purchase_time = datetime.datetime.now(tz)
-        expire_time = purchase_time + datetime.timedelta(days=int(duration_days))
-        formatted_expire = expire_time.strftime('%Y-%m-%d %H:%M') # ฟอร์แมต YYYY-MM-DD เพื่อให้ระบบแจ้งเตือนตรวจสอบง่าย
+        now = datetime.datetime.now(tz)
+        duration = int(duration_days)
+
+        if duration == 1:
+            # แบบ 1 วัน: บวก 24 ชั่วโมง และเก็บเวลาแบบเป๊ะๆ (วินาที)
+            expire_time = now + datetime.timedelta(days=1)
+            formatted_expire = expire_time.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            # แบบหลายวัน (7, 30, 60 วัน ฯลฯ)
+            # ถ้าลูกค้าซื้อช่วง 22.00 - 23.59 ให้นับเต็มจำนวนวัน (บวก 7 หรือ 30)
+            if 22 <= now.hour <= 23:
+                days_to_add = duration
+            # ถ้าซื้อเวลาปกติ (00.00 - 21.59) ให้หักออก 1 วัน (บวก 6 หรือ 29)
+            else:
+                days_to_add = duration - 1
+            
+            expire_time = now + datetime.timedelta(days=days_to_add)
+            formatted_expire = expire_time.strftime('%Y-%m-%d') # เก็บเฉพาะวันที่
         
         # อัปเดตสถานะและใส่วันหมดอายุลงในตาราง products
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{target_product['id']}&status=eq.available"

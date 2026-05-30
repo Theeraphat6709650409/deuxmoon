@@ -280,6 +280,18 @@ async function buyProduct(platform, duration_days, price, displayName) {
             checkLoginStatus();
             
             const data = result.data;
+            // แปลงรูปแบบวันที่จากสากล (YYYY-MM-DD) เป็นรูปแบบ EXP DD-MM-YYYY 
+            let displayExpire = data.expire_date || '-';
+            if (displayExpire !== '-') {
+                let dateParts = displayExpire.split(' '); // แยกวันที่กับเวลาออกจากกัน
+                let d = dateParts[0].split('-'); // แยก ปี-เดือน-วัน
+                if (d.length === 3) {
+                    let timeStr = dateParts[1] ? ' ' + dateParts[1] : '';
+                    // นำมาประกอบใหม่ตามสูตร Excel
+                    displayExpire = `EXP ${d[2]}-${d[1]}-${d[0]}${timeStr}`;
+                }
+            }
+
             let receiptHtml = `
                 <div>แพลตฟอร์ม: <span>${displayName}</span></div>
                 <div>บัญชี (ล็อกอิน): <span>${data.account_login || data.login}</span></div>
@@ -287,7 +299,7 @@ async function buyProduct(platform, duration_days, price, displayName) {
             if (data.account_password || data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.account_password || data.password}</span></div>`;
             receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile_name || data.profile || '-'}</span></div>`;
             if (data.pin_code || data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin_code || data.pin}</span></div>`;
-            receiptHtml += `<div>วันหมดอายุ: <span>${data.expire_date || '-'}</span></div>
+            receiptHtml += `<div>วันหมดอายุ: <span>${displayExpire}</span></div>
                 
                 <div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">
                     <strong style="color: #ff8080;">กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.-</strong><br><br>
