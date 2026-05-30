@@ -221,6 +221,82 @@ body {
 }
 
 /* =========================================
+   หน้าเมนูเลือกแอปพลิเคชัน (App Grid) แบบขยายขนาด
+   ========================================= */
+.app-grid {
+    display: grid;
+    /* ขยายความกว้างขั้นต่ำของกล่องจาก 130px เป็น 160px */
+    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); 
+    gap: 20px; /* เพิ่มระยะห่างระหว่างกล่องนิดหน่อย */
+    padding: 10px 0;
+}
+
+.app-card {
+    background: var(--dark-glass);
+    border: 1px solid var(--dark-border);
+    border-radius: 12px;
+    padding: 25px 15px; /* เพิ่มพื้นที่ระยะขอบด้านใน */
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px; /* ขยายความสูงขั้นต่ำของกล่อง */
+}
+
+.app-card:hover {
+    transform: translateY(-5px);
+    border-color: #ffb74d;
+    box-shadow: 0 5px 15px rgba(255, 183, 77, 0.15);
+}
+
+.app-icon {
+    width: 125px; /* ขยายขนาดกรอบโลโก้จาก 65px เป็น 85px */
+    height: 125px;
+    border-radius: 18px; /* ปรับความโค้งมุมให้เข้ากับขนาดใหม่ */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 12px; /* ขยายกรอบเว้นระยะด้านในนิดหน่อยโลโก้จะได้ไม่อึดอัด */
+    box-sizing: border-box;
+}
+
+.app-title {
+    font-size: 16px; /* ขยายขนาดตัวหนังสือชื่อแอปจาก 14px เป็น 16px */
+    font-weight: bold;
+    color: white;
+}
+
+.btn-back {
+    background: transparent;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: white;
+}
+
+/* =========================================
    📱 โค้ด Responsive จัดหน้าตาสำหรับมือถือ
    ========================================= */
 @media (max-width: 768px) {
