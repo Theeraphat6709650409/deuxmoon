@@ -300,6 +300,7 @@ def reset_password():
 
 @app.route('/api/cron/check-expire', methods=['GET'])
 def check_expire():
+    import time # นำเข้า module time สำหรับระบบหน่วงเวลา
     cron_key = request.args.get('key')
     expected_key = os.environ.get("CRON_SECRET", "")
     if not cron_key or cron_key != expected_key: return jsonify({'error': 'Unauthorized'}), 401
@@ -307,8 +308,6 @@ def check_expire():
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     line_token = os.environ.get("LINE_NOTIFY_TOKEN")
-    
-    # แจ้งเตือนบัญชีหมดอายุไปยังลิงก์ DISCORD_WEBHOOK_URL_EXPIRE
     discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL_EXPIRE") 
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
 
@@ -341,13 +340,28 @@ def check_expire():
             update_url = f"{supabase_url}/rest/v1/products?id=eq.{p['id']}"
             requests.patch(update_url, headers=headers, json={"status": "pending_reset"})
 
+        # ส่งเข้า LINE
         if line_token:
-            line_notify_api = 'https://notify-api.line.me/api/notify'
-            line_headers = {'Authorization': f'Bearer {line_token}'}
-            requests.post(line_notify_api, headers=line_headers, data={'message': "\n".join(line_messages)})
+            try:
+                line_notify_api = 'https://notify-api.line.me/api/notify'
+                line_headers = {'Authorization': f'Bearer {line_token}'}
+                requests.post(line_notify_api, headers=line_headers, data={'message': "\n".join(line_messages)})
+            except:
+                pass
         
+        # --- ระบบ Retry ส่ง Discord ซ้ำหากเซิร์ฟเวอร์ปลายทางล่มหรือหน่วง ---
         if discord_webhook:
-            requests.post(discord_webhook, json={'content': "\n".join(discord_messages)})
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    discord_res = requests.post(discord_webhook, json={'content': "\n".join(discord_messages)})
+                    # ถ้าสถานะกลับมาเป็น 200 (OK) หรือ 204 (No Content) แปลว่าส่งสำเร็จ ให้ออกจากลูป
+                    if discord_res.status_code in [200, 204]:
+                        break 
+                    else:
+                        time.sleep(2) # หากไม่สำเร็จ รอ 2 วินาทีแล้วลองส่งใหม่
+                except Exception:
+                    time.sleep(2) # กรณีเซิร์ฟเวอร์ Discord ไม่ตอบสนองเลย ให้รอ 2 วินาทีแล้วลองใหม่
 
         return jsonify({'status': 'success', 'message': f'แจ้งเตือนและอัปเดตไป {len(expired_products)} บัญชี'})
     except Exception as e:
