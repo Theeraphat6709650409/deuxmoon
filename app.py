@@ -178,7 +178,6 @@ def buy_product(current_user_id):
         new_credit = current_credit - price
         requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={"credit_balance": new_credit})
         
-        # เพิ่มบรรทัด "has_warranty": warranty เข้าไปเพื่อให้บันทึกลงฐานข้อมูลประวัติ
         purchase_payload = {
             "user_id": current_user_id, "product_id": target_product['id'],
             "platform": purchased_account.get('platform', ''), "account_login": purchased_account.get('account_login', ''),
@@ -191,6 +190,27 @@ def buy_product(current_user_id):
         purchased_account['expire_date'] = formatted_expire
         purchased_account['warranty_addon'] = warranty_addon
         purchased_account['has_warranty'] = warranty
+        
+        # แจ้งเตือนยอดขายไปยังลิงก์ DISCORD_WEBHOOK_URL_BUY
+        discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL_BUY")
+        if discord_webhook:
+            try:
+                warranty_text = "มีประกัน" if warranty else "ไม่มีประกัน"
+                notify_msg = f"**[ รายการสั่งซื้อใหม่ ]**\n" \
+                             f"> **ลูกค้า:** `{user['email']}`\n" \
+                             f"> **สินค้า:** `{platform.upper()}` ({duration_days} วัน)\n" \
+                             f"> **ยอดชำระ:** `{price} THB`\n" \
+                             f"> **สถานะ:** `{warranty_text}`\n" \
+                             f"> \n" \
+                             f"> **[ ข้อมูลบัญชีที่จัดส่งให้ลูกค้า ]**\n" \
+                             f"> **ล็อกอิน:** `{purchased_account.get('account_login', '-')}`\n" \
+                             f"> **จอ:** `{purchased_account.get('profile_name', '-')}`\n" \
+                             f"> **วันหมดอายุ:** `{formatted_expire}`"
+                
+                requests.post(discord_webhook, json={'content': notify_msg})
+            except Exception:
+                pass 
+        
         return jsonify({'status': 'success', 'data': purchased_account, 'remaining_credit': new_credit})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -287,7 +307,9 @@ def check_expire():
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     line_token = os.environ.get("LINE_NOTIFY_TOKEN")
-    discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL") # ตัวแปรใหม่สำหรับรับลิงก์ Webhook ของ Discord
+    
+    # แจ้งเตือนบัญชีหมดอายุไปยังลิงก์ DISCORD_WEBHOOK_URL_EXPIRE
+    discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL_EXPIRE") 
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
 
     try:
@@ -310,18 +332,20 @@ def check_expire():
             profile = p.get('profile_name', '-')
             expire = p.get('expire_date', '-')
 
-            # รูปแบบข้อความสำหรับ LINE
             line_msg = f"\nแพลตฟอร์ม: {platform_name}\nอีเมล: {login}\nรหัสผ่าน: {password}\nจอ: {profile}\nหมดอายุ: {expire}"
             line_messages.append(line_msg)
             
-            # รูปแบบข้อความสำหรับ Discord (ใช้ Markdown เพื่อให้อ่านง่าย)
             discord_msg = f"**{platform_name}**\n> **อีเมล:** `{login}`\n> **รหัสผ่าน:** `{password}`\n> **จอที่ใช้งาน:** `{profile}`\n> **หมดอายุ:** `{expire}`\n"
             discord_messages.append(discord_msg)
 
             update_url = f"{supabase_url}/rest/v1/products?id=eq.{p['id']}"
             requests.patch(update_url, headers=headers, json={"status": "pending_reset"})
+
+        if line_token:
+            line_notify_api = 'https://notify-api.line.me/api/notify'
+            line_headers = {'Authorization': f'Bearer {line_token}'}
+            requests.post(line_notify_api, headers=line_headers, data={'message': "\n".join(line_messages)})
         
-        # ส่งเข้า Discord
         if discord_webhook:
             requests.post(discord_webhook, json={'content': "\n".join(discord_messages)})
 
