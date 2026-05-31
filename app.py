@@ -287,6 +287,7 @@ def check_expire():
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     line_token = os.environ.get("LINE_NOTIFY_TOKEN")
+    discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL") # ตัวแปรใหม่สำหรับรับลิงก์ Webhook ของ Discord
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
 
     try:
@@ -299,17 +300,37 @@ def check_expire():
 
         if not expired_products: return jsonify({'status': 'success', 'message': 'ไม่มีบัญชีหมดอายุในวันนี้'})
 
-        messages = ["แจ้งเตือนบัญชีหมดอายุ! ถึงเวลารีเซ็ตแล้ว:"]
+        line_messages = ["แจ้งเตือนบัญชีหมดอายุ! ถึงเวลารีเซ็ตแล้ว:"]
+        discord_messages = ["**[แจ้งเตือน] บัญชีหมดอายุ! ถึงเวลารีเซ็ตแล้ว:**"]
+        
         for p in expired_products:
-            msg = f"\nแพลตฟอร์ม: {p['platform'].upper()}\nล็อกอิน: {p['account_login']}\nโปรไฟล์: {p['profile_name']}\nหมดอายุ: {p['expire_date']}"
-            messages.append(msg)
+            platform_name = p.get('platform', '').upper()
+            login = p.get('account_login', '-')
+            password = p.get('account_password', '-')
+            profile = p.get('profile_name', '-')
+            expire = p.get('expire_date', '-')
+
+            # รูปแบบข้อความสำหรับ LINE
+            line_msg = f"\nแพลตฟอร์ม: {platform_name}\nอีเมล: {login}\nรหัสผ่าน: {password}\nจอ: {profile}\nหมดอายุ: {expire}"
+            line_messages.append(line_msg)
+            
+            # รูปแบบข้อความสำหรับ Discord (ใช้ Markdown เพื่อให้อ่านง่าย)
+            discord_msg = f"**{platform_name}**\n> **อีเมล:** `{login}`\n> **รหัสผ่าน:** `{password}`\n> **จอที่ใช้งาน:** `{profile}`\n> **หมดอายุ:** `{expire}`\n"
+            discord_messages.append(discord_msg)
+
             update_url = f"{supabase_url}/rest/v1/products?id=eq.{p['id']}"
             requests.patch(update_url, headers=headers, json={"status": "pending_reset"})
 
+        # ส่งเข้า LINE
         if line_token:
             line_notify_api = 'https://notify-api.line.me/api/notify'
             line_headers = {'Authorization': f'Bearer {line_token}'}
-            requests.post(line_notify_api, headers=line_headers, data={'message': "\n".join(messages)})
+            requests.post(line_notify_api, headers=line_headers, data={'message': "\n".join(line_messages)})
+        
+        # ส่งเข้า Discord
+        if discord_webhook:
+            requests.post(discord_webhook, json={'content': "\n".join(discord_messages)})
+
         return jsonify({'status': 'success', 'message': f'แจ้งเตือนและอัปเดตไป {len(expired_products)} บัญชี'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
