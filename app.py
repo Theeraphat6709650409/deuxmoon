@@ -91,7 +91,6 @@ def login():
             secret = os.environ.get("JWT_SECRET", "deuxmoon2026")
             token = jwt.encode({'user_id': user['id'], 'email': user['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)}, secret, algorithm="HS256")
             
-            # ส่งค่า role กลับไปให้หน้าเว็บด้วย เพื่อเช็คสถานะแม่ค้า
             user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal')}
             return jsonify({'status': 'success', 'token': token, 'data': user_data})
         else:
@@ -105,6 +104,7 @@ def buy_product(current_user_id):
     data = request.json
     platform = data.get('platform')
     duration_days = data.get('duration_days')
+    warranty = data.get('warranty', False) # <--- เพิ่มตัวแปรรับค่าประกัน
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -129,9 +129,19 @@ def buy_product(current_user_id):
         wholesale_price = target_product.get('wholesale_price')
         
         if user_role == 'reseller' and wholesale_price is not None and str(wholesale_price).strip() != "":
-            price = float(wholesale_price)
+            base_price = float(wholesale_price)
         else:
-            price = normal_price
+            base_price = normal_price
+            
+        # --- ระบบบวกค่าประกันเคลม Netflix ---
+        warranty_addon = 0
+        if warranty and platform.startswith('netflix'):
+            if int(duration_days) == 7:
+                warranty_addon = 10
+            elif int(duration_days) == 30:
+                warranty_addon = 25
+                
+        price = base_price + warranty_addon # นำราคาสุทธิไปบวกเพิ่มประกัน
         # ----------------------
 
         if current_credit < price: return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
@@ -169,12 +179,12 @@ def buy_product(current_user_id):
             "user_id": current_user_id, "product_id": target_product['id'],
             "platform": purchased_account.get('platform', ''), "account_login": purchased_account.get('account_login', ''),
             "account_password": purchased_account.get('account_password', ''), "profile_name": purchased_account.get('profile_name', ''),
-            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price
+            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price # บันทึกราคารวมประกันลงประวัติด้วย
         }
         requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
         
-        # คืนค่าข้อมูลบัญชีพร้อมวันหมดอายุใหม่ให้หน้าเว็บแสดงผล
         purchased_account['expire_date'] = formatted_expire
+        purchased_account['warranty_addon'] = warranty_addon # แนบไปบอกหน้าเว็บว่าซื้อประกันสำเร็จ
         return jsonify({'status': 'success', 'data': purchased_account, 'remaining_credit': new_credit})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -196,7 +206,6 @@ def topup_credit(current_user_id):
         headers_slipok = {'x-authorization': slipok_api_key}
         files = {'files': (slip_file.filename, file_bytes, slip_file.mimetype or 'image/jpeg')}
         
-        # บันทึก log รูปภาพลง SlipOK
         payload = {'log': 'true'}
         slipok_res = requests.post(slipok_url, headers=headers_slipok, files=files, data=payload)
         slipok_data = slipok_res.json()

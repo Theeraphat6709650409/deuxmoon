@@ -2,7 +2,6 @@ const API_URL = "https://deuxmoon-api.onrender.com";
 let authMode = 'login'; 
 let globalStock = []; 
 
-// --- ระบบแสดง Pop-up (SweetAlert2) ---
 function showToast(icon, title) {
     Swal.fire({
         toast: true, position: 'top-end', icon: icon, title: title,
@@ -114,7 +113,6 @@ const packages = {
     ]
 };
 
-// --- ควบคุม UI ---
 function toggleTopup() {
     const store = document.getElementById('store-section');
     const topup = document.getElementById('topup-section');
@@ -162,7 +160,6 @@ function updateAuthUI() {
     }
 }
 
-// --- โหลดข้อมูลสต็อก ---
 async function fetchProducts() {
     try {
         const response = await fetch(`${API_URL}/check-products`);
@@ -221,7 +218,26 @@ function handleAppClick(appId, appName) {
     renderPackages(appId, appName);
 }
 
-// ระบบวาดกล่องแพ็กเกจ และคำนวณราคาส่ง
+// ฟังก์ชันอัปเดตราคาบนหน้าจอให้ลูกค้าเห็นทันทีเมื่อกดติ๊กประกัน
+function updatePriceDisplay(platform, duration) {
+    const checkbox = document.getElementById(`warranty-${platform}-${duration}`);
+    const priceContainer = document.getElementById(`price-display-${platform}-${duration}`);
+    if (!checkbox || !priceContainer) return;
+    
+    const basePrice = parseFloat(checkbox.getAttribute('data-baseprice'));
+    const originalPrice = parseFloat(checkbox.getAttribute('data-originalprice'));
+    const isReseller = checkbox.getAttribute('data-isreseller') === 'true';
+    const addon = parseFloat(checkbox.getAttribute('data-addon'));
+    
+    let finalPrice = checkbox.checked ? (basePrice + addon) : basePrice;
+    
+    if (isReseller && originalPrice > basePrice) {
+        priceContainer.innerHTML = `<span style="text-decoration: line-through; color: #888; font-size: 15px; margin-right: 8px;">${originalPrice}</span><span style="color: #ff4d4d; font-weight: bold;">${finalPrice} THB <span style="font-size:12px; border: 1px solid #ff4d4d; padding: 2px 4px; border-radius: 4px;">ราคาส่ง</span></span>`;
+    } else {
+        priceContainer.innerHTML = `${finalPrice} THB`;
+    }
+}
+
 function renderPackages(configId, title) {
     if (title) document.getElementById('store-title').innerText = title;
     const container = document.getElementById('package-container');
@@ -229,7 +245,6 @@ function renderPackages(configId, title) {
     const packList = packages[configId];
     if (!packList) return;
 
-    // เช็คว่าลูกค้าเป็นแม่ค้าหรือไม่
     const userStr = localStorage.getItem('user');
     let isReseller = false;
     if (userStr) {
@@ -241,8 +256,8 @@ function renderPackages(configId, title) {
         const availableItems = globalStock.filter(item => item.platform === pack.p && parseInt(item.duration_days) === pack.d);
         const count = availableItems.length;
         
-        let priceDisplay = '-';
-        let actualPrice = 0;
+        let basePrice = 0;
+        let originalPrice = 0;
 
         if (count > 0) {
             const sampleItem = availableItems[0];
@@ -250,32 +265,73 @@ function renderPackages(configId, title) {
             const wholesalePrice = sampleItem.wholesale_price ? parseFloat(sampleItem.wholesale_price) : null;
             
             if (isReseller && wholesalePrice) {
-                actualPrice = wholesalePrice;
-                // ถ้าเป็นแม่ค้า ให้ขีดฆ่าราคาปกติ แล้วโชว์ราคาส่ง
-                priceDisplay = `<span style="text-decoration: line-through; color: #888; font-size: 15px; margin-right: 8px;">${normalPrice}</span><span style="color: #ff4d4d; font-weight: bold;">${wholesalePrice} THB <span style="font-size:12px; border: 1px solid #ff4d4d; padding: 2px 4px; border-radius: 4px;">ราคาส่ง</span></span>`;
+                basePrice = wholesalePrice;
+                originalPrice = normalPrice;
             } else {
-                actualPrice = normalPrice;
-                priceDisplay = `${normalPrice} THB`;
+                basePrice = normalPrice;
             }
         }
 
+        // --- ระบบสร้างกล่องประกันเคลม Netflix ---
+        let isNetflix = pack.p.startsWith('netflix');
+        let warrantyHtml = '';
+        let warrantyAddon = 0;
+        let hasWarrantyOption = false;
+
+        if (isNetflix) {
+            if (pack.d === 7) warrantyAddon = 10;
+            else if (pack.d === 30) warrantyAddon = 25;
+            
+            if (warrantyAddon > 0) {
+                hasWarrantyOption = true;
+                warrantyHtml = `
+                    <div style="margin-top: 10px; margin-bottom: 10px; font-size: 13px; text-align: left; background: rgba(0, 220, 90, 0.1); border: 1px solid rgba(0, 220, 90, 0.3); padding: 8px; border-radius: 6px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; margin: 0;">
+                            <input type="checkbox" id="warranty-${pack.p}-${pack.d}" 
+                                   data-baseprice="${basePrice}"
+                                   data-originalprice="${originalPrice}"
+                                   data-isreseller="${isReseller}"
+                                   data-addon="${warrantyAddon}"
+                                   onchange="updatePriceDisplay('${pack.p}', ${pack.d})" 
+                                   style="cursor: pointer; width: 16px; height: 16px; accent-color: #00dc5a;">
+                            <span style="color: #00dc5a; font-weight: 500;">รับประกันเคลมบัญชี (+${warrantyAddon} ฿)</span>
+                        </label>
+                    </div>
+                `;
+            } else {
+                warrantyHtml = `
+                    <div style="margin-top: 10px; margin-bottom: 10px; font-size: 12px; text-align: left; background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 6px; color: #888;">
+                        ❌ แพ็กเกจ 1 วัน ไม่มีตัวเลือกประกันเคลม
+                    </div>
+                `;
+            }
+        }
+        // ------------------------------------
+
+        let priceHtml = '';
+        if (isReseller && originalPrice > basePrice) {
+             priceHtml = `<span style="text-decoration: line-through; color: #888; font-size: 15px; margin-right: 8px;">${originalPrice}</span><span style="color: #ff4d4d; font-weight: bold;">${basePrice} THB <span style="font-size:12px; border: 1px solid #ff4d4d; padding: 2px 4px; border-radius: 4px;">ราคาส่ง</span></span>`;
+        } else {
+             priceHtml = `${basePrice} THB`;
+        }
+
         let btnHtml = count > 0 
-            ? `<button class="btn-buy" style="background: #007bff; border: none;" onclick="buyProduct('${pack.p}', ${pack.d}, ${actualPrice}, '${title} - ${pack.label}')">ซื้อเลย</button>`
+            ? `<button class="btn-buy" style="background: #007bff; border: none;" onclick="buyProduct('${pack.p}', ${pack.d}, ${basePrice}, '${title} - ${pack.label}', ${hasWarrantyOption})">ซื้อเลย</button>`
             : `<button class="btn-buy" style="background: #444; color: #888; border: 1px solid #555; cursor: not-allowed;" disabled>สินค้าหมด</button>`;
 
         container.innerHTML += `
             <div class="product-card">
                 <div class="product-name" style="font-size: 16px; margin-bottom: 5px;">${pack.label}</div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">พร้อมส่ง: ${count} รายการ</div>
-                <div class="product-price" style="font-size: 20px;">${priceDisplay}</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">พร้อมส่ง: ${count} รายการ</div>
+                ${warrantyHtml}
+                <div class="product-price" id="price-display-${pack.p}-${pack.d}" style="font-size: 20px;">${priceHtml}</div>
                 ${btnHtml}
             </div>
         `;
     });
 }
 
-// --- ฟังก์ชันซื้อสินค้า ---
-async function buyProduct(platform, duration_days, price, displayName) {
+async function buyProduct(platform, duration_days, basePrice, displayName, hasWarrantyOption) {
     const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
@@ -286,7 +342,23 @@ async function buyProduct(platform, duration_days, price, displayName) {
     }
 
     const user = JSON.parse(userStr);
-    if (parseFloat(user.credit_balance) < price) {
+    
+    // คำนวณราคาประกัน (ถ้ามี)
+    let isWarrantySelected = false;
+    let finalPrice = basePrice;
+    let warrantyText = '';
+
+    if (hasWarrantyOption) {
+        const checkbox = document.getElementById(`warranty-${platform}-${duration_days}`);
+        if (checkbox && checkbox.checked) {
+            isWarrantySelected = true;
+            let addon = parseFloat(checkbox.getAttribute('data-addon'));
+            finalPrice += addon;
+            warrantyText = `<br><span style="color: #00dc5a; font-size: 14px;">✅ บวกประกันเคลมบัญชี (+${addon} บาท)</span>`;
+        }
+    }
+
+    if (parseFloat(user.credit_balance) < finalPrice) {
         await showAlert('error', 'ยอดเงินไม่เพียงพอ', 'กรุณาเติมเงินก่อนทำรายการสั่งซื้อครับ');
         toggleTopup();
         return;
@@ -294,7 +366,7 @@ async function buyProduct(platform, duration_days, price, displayName) {
 
     const confirmBuy = await Swal.fire({
         title: 'ยืนยันการสั่งซื้อ',
-        html: `แพ็กเกจ <b>${displayName}</b><br>ราคา <b>${price}</b> บาท`,
+        html: `แพ็กเกจ <b>${displayName}</b>${warrantyText}<br>ยอดชำระ <b>${finalPrice}</b> บาท`,
         icon: 'question',
         background: '#1a1a2e', color: '#fff',
         showCancelButton: true,
@@ -313,7 +385,7 @@ async function buyProduct(platform, duration_days, price, displayName) {
         const response = await fetch(`${API_URL}/buy`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ platform: platform, duration_days: duration_days })
+            body: JSON.stringify({ platform: platform, duration_days: duration_days, warranty: isWarrantySelected })
         });
         const result = await response.json();
 
@@ -334,8 +406,10 @@ async function buyProduct(platform, duration_days, price, displayName) {
                 }
             }
 
+            // ถ้ามีการซื้อประกัน จะแสดงหลักฐานการเคลมในใบเสร็จ
             let receiptHtml = `
                 <div>แพลตฟอร์ม: <span>${displayName}</span></div>
+                ${data.warranty_addon > 0 ? `<div style="color: #00dc5a; font-weight: bold; margin-bottom: 5px;">✅ สั่งซื้อแบบรวมประกันเคลมบัญชี</div>` : ''}
                 <div>บัญชี (ล็อกอิน): <span>${data.account_login || data.login}</span></div>
             `;
             if (data.account_password || data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.account_password || data.password}</span></div>`;
@@ -365,7 +439,6 @@ async function buyProduct(platform, duration_days, price, displayName) {
     }
 }
 
-// --- ฟังก์ชัน Auth ---
 async function register() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
@@ -444,7 +517,6 @@ function checkLoginStatus() {
         document.getElementById('menu-guest').style.display = 'none';
         document.getElementById('menu-logged-in').style.display = 'flex';
         
-        // เพิ่มป้ายกำกับ [แม่ค้า] บนแถบเมนู
         let roleBadge = user.role === 'reseller' ? ' <span style="color:#ffb74d; font-size:12px; border: 1px solid #ffb74d; padding: 2px 5px; border-radius: 4px; margin-left: 5px;">ตัวแทนจำหน่าย</span>' : '';
         document.getElementById('display-email').innerHTML = user.email + roleBadge;
         document.getElementById('credit-display').innerText = user.credit_balance;
@@ -456,7 +528,6 @@ function checkLoginStatus() {
 
 window.onload = () => { checkLoginStatus(); fetchProducts(); };
 
-// --- เติมเงิน ---
 async function uploadSlip() {
     const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('token');
