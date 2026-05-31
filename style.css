@@ -1,16 +1,31 @@
+/* ==========================================
+   DEUXMOON - PREMIUM GLASSMORPHISM (MAGICAL PUMPKIN THEME)
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
 :root {
     --disney-btn: #0072d2;
     --netflix-btn: #e50914;
-    --dark-glass: rgba(25, 10, 45, 0.75);
-    --dark-border: rgba(255, 255, 255, 0.15);
+    
+    /* ชุดสีจากธีมเว็บ (ม่วง/ชมพู/ส้ม) */
+    --theme-orange: #ff9e2c;
+    --theme-pink: #d81b60;
+    --theme-purple: #5c35b1;
+    --theme-glow: rgba(255, 158, 44, 0.4); /* แสงเรืองรองสีส้ม */
+    
+    /* ชุดสีกระจกใส (โทนม่วงเข้มอวกาศ) */
+    --dark-glass: rgba(28, 12, 50, 0.55);
+    --dark-border: rgba(255, 255, 255, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.2);
+    
     --text-light: #ffffff;
-    --text-muted: #d0c5e3;
-    --bg-color: #1a0b2e;
+    --text-muted: #c8b9df;
+    --bg-color: #0b071e;
 }
 
 body {
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    /* เปลี่ยนชื่อไฟล์ตรงนี้ให้ตรงกับรูปพื้นหลังของคุณ */
+    font-family: 'Prompt', 'Segoe UI', Roboto, sans-serif;
+    /* อิงจากชื่อไฟล์รูปภาพล่าสุดที่คุณส่งมา */
     background-image: url('4F36D6F4-6C48-4405-BDF3-E06B9EDDAEDF.png'); 
     background-color: var(--bg-color);
     background-size: cover;
@@ -20,26 +35,56 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
-/* --- Navigation Bar --- */
+/* --- Animation การเปิดตัว --- */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Navigation Bar (Floating Glass) --- */
 .navbar {
-    background-color: rgba(15, 5, 30, 0.9);
+    background: rgba(20, 8, 45, 0.65);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid var(--dark-border);
+    border-top: 1px solid var(--glass-highlight);
+    border-radius: 20px;
+    margin: 15px auto;
+    max-width: 1100px;
     padding: 15px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--dark-border);
     position: sticky;
-    top: 0;
+    top: 15px;
     z-index: 100;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .brand {
     font-size: 24px;
     font-weight: bold;
-    color: #ffb74d;
+    color: var(--theme-orange);
     letter-spacing: 2px;
+}
+
+.brand img {
+    height: 55px !important;
+    border-radius: 12px;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.brand img:hover {
+    transform: scale(1.05) rotate(-2deg);
 }
 
 .user-menu {
@@ -49,31 +94,38 @@ body {
 }
 
 .wallet-badge {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    padding: 8px 18px;
     border-radius: 20px;
     font-size: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .wallet-amount {
     font-weight: bold;
-    color: #00ff88;
+    color: var(--theme-orange);
+    text-shadow: 0 0 10px rgba(255, 158, 44, 0.4);
 }
 
 .btn-topup {
-    background-color: var(--disney-btn);
+    background: linear-gradient(135deg, var(--theme-purple) 0%, var(--theme-pink) 100%);
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
+    font-weight: 600;
+    font-family: 'Prompt', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(216, 27, 96, 0.4);
 }
 
 .btn-topup:hover {
-    background-color: #005bb5;
+    filter: brightness(1.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(216, 27, 96, 0.6);
 }
 
 /* --- Main Container --- */
@@ -88,33 +140,128 @@ body {
     margin-bottom: 30px;
     font-size: 28px;
     font-weight: 700;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* =========================================
+   หน้าเมนูเลือกแอปพลิเคชัน (App Grid)
+   ========================================= */
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); 
+    gap: 20px; 
+    padding: 10px 0;
+}
+
+.app-card {
+    background: linear-gradient(145deg, rgba(50, 25, 80, 0.55) 0%, rgba(25, 12, 45, 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--dark-border);
+    border-top: 1px solid var(--glass-highlight);
+    border-left: 1px solid var(--glass-highlight);
+    border-radius: 20px;
+    padding: 25px 15px; 
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px; 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.app-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(255, 158, 44, 0.6);
+    box-shadow: 0 15px 35px rgba(255, 158, 44, 0.25), inset 0 0 20px rgba(255,255,255,0.05);
+}
+
+.app-icon {
+    width: 125px; 
+    height: 125px;
+    border-radius: 18px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transition: all 0.4s ease;
+}
+
+.app-card:hover .app-icon {
+    transform: scale(1.08) translateY(-5px);
+    box-shadow: 0 12px 25px rgba(255, 158, 44, 0.4);
+}
+
+.app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 12px; 
+    box-sizing: border-box;
+}
+
+.app-title {
+    font-size: 16px; 
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 }
 
 /* --- Product Grid --- */
 .product-container {
     display: flex;
-    flex-wrap: wrap; /* สั่งให้กล่องปัดขึ้นบรรทัดใหม่ได้ถ้าจอแคบ */
-    justify-content: center; /* จัดให้กล่องทั้งหมดอยู่กึ่งกลาง */
-    gap: 20px; /* ระยะห่างระหว่างกล่อง */
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 20px; 
     margin-top: 20px;
 }
 
 .product-card {
-    background: var(--dark-glass);
+    background: linear-gradient(160deg, rgba(40, 20, 65, 0.75) 0%, rgba(15, 8, 30, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--dark-border);
-    border-radius: 12px;
+    border-top: 1px solid var(--glass-highlight);
+    border-radius: 20px;
     padding: 25px 20px;
     text-align: center;
     width: 100%;
-    max-width: 280px; /* จุดสำคัญ: บังคับความกว้างสูงสุดไม่ให้กล่องยืดเกินไป */
+    max-width: 280px; 
     box-sizing: border-box;
-    transition: 0.3s;
+    transition: all 0.4s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.product-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--theme-orange), var(--theme-pink), var(--theme-orange));
+    background-size: 200% auto;
+    animation: gradientShift 3s linear infinite;
+    opacity: 0.9;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
 }
 
 .product-card:hover {
-    transform: translateY(-5px);
-    border-color: #ffb74d;
-    box-shadow: 0 5px 15px rgba(255, 183, 77, 0.15);
+    transform: translateY(-6px);
+    border-color: rgba(255, 158, 44, 0.5);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5), 0 0 25px var(--theme-glow);
 }
 
 .product-logo {
@@ -131,56 +278,94 @@ body {
 
 .product-price {
     font-size: 24px;
-    color: #ffb74d;
+    color: var(--theme-orange);
     font-weight: bold;
     margin-bottom: 20px;
+    text-shadow: 0 0 10px rgba(255, 158, 44, 0.3);
 }
 
+/* --- ปุ่มซื้อเลย เปลี่ยนสีเป็นส้ม-ชมพู --- */
 .btn-buy {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
+    font-family: 'Prompt', sans-serif;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
     color: white;
-    transition: 0.3s;
+    background: linear-gradient(135deg, var(--theme-orange) 0%, var(--theme-pink) 100%);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 6px 15px var(--theme-glow);
 }
 
-.btn-netflix { background-color: var(--netflix-btn); }
-.btn-netflix:hover { background-color: #b20710; }
+.btn-buy:hover:not(.btn-disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(255, 158, 44, 0.6);
+    filter: brightness(1.1);
+}
 
-.btn-disney { background-color: var(--disney-btn); }
-.btn-disney:hover { background-color: #005bb5; }
+.btn-buy:active:not(.btn-disabled) {
+    transform: translateY(1px);
+}
 
 .btn-disabled {
-    background-color: #555;
+    background: linear-gradient(135deg, #444 0%, #222 100%);
+    color: #888;
     cursor: not-allowed;
+    box-shadow: none;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* --- Top-up Section --- */
+.btn-back {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-highlight);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-family: 'Prompt', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateX(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+/* --- Top-up & Modals (Auth & Receipt) --- */
+.topup-modal, .modal-content {
+    background: linear-gradient(160deg, rgba(40, 20, 65, 0.85) 0%, rgba(15, 8, 30, 0.95) 100%);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid var(--dark-border);
+    border-top: 1px solid var(--glass-highlight);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+}
+
 .topup-modal {
     display: none;
-    background-color: var(--dark-glass);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--dark-border);
-    border-radius: 16px;
     padding: 30px;
     max-width: 400px;
     margin: 40px auto;
     text-align: center;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* --- Modal Styles (Auth & Receipt) --- */
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -188,117 +373,58 @@ body {
 }
 
 .modal-content {
-    background-color: var(--dark-glass);
-    border: 1px solid var(--dark-border);
-    border-radius: 16px;
     padding: 30px;
     width: 90%;
     max-width: 400px;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-    animation: popIn 0.3s ease-out;
-}
-
-@keyframes popIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .modal-title {
-    color: #00ff88;
+    color: var(--theme-orange);
     margin-top: 0;
     margin-bottom: 20px;
     font-size: 24px;
     text-align: center;
+    text-shadow: 0 0 10px rgba(255, 158, 44, 0.3);
 }
 
 .receipt-details {
     text-align: left;
-    background-color: rgba(0,0,0,0.3);
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 16px;
+    background-color: rgba(0,0,0,0.4);
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 15px;
     line-height: 1.8;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
 }
 
 .receipt-details span {
-    color: #ffb74d;
+    color: var(--theme-orange);
     font-weight: bold;
 }
 
-/* =========================================
-   หน้าเมนูเลือกแอปพลิเคชัน (App Grid) แบบขยายขนาด
-   ========================================= */
-.app-grid {
-    display: grid;
-    /* ขยายความกว้างขั้นต่ำของกล่องจาก 130px เป็น 160px */
-    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); 
-    gap: 20px; /* เพิ่มระยะห่างระหว่างกล่องนิดหน่อย */
-    padding: 10px 0;
-}
-
-.app-card {
-    background: var(--dark-glass);
-    border: 1px solid var(--dark-border);
-    border-radius: 12px;
-    padding: 25px 15px; /* เพิ่มพื้นที่ระยะขอบด้านใน */
-    text-align: center;
-    cursor: pointer;
-    transition: 0.3s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 150px; /* ขยายความสูงขั้นต่ำของกล่อง */
-}
-
-.app-card:hover {
-    transform: translateY(-5px);
-    border-color: #ffb74d;
-    box-shadow: 0 5px 15px rgba(255, 183, 77, 0.15);
-}
-
-.app-icon {
-    width: 125px; /* ขยายขนาดกรอบโลโก้จาก 65px เป็น 85px */
-    height: 125px;
-    border-radius: 18px; /* ปรับความโค้งมุมให้เข้ากับขนาดใหม่ */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 15px;
-    overflow: hidden;
-    background: #ffffff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-.app-icon img {
+/* --- ช่องกรอกข้อมูล (Inputs) --- */
+input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 12px; /* ขยายกรอบเว้นระยะด้านในนิดหน่อยโลโก้จะได้ไม่อึดอัด */
-    box-sizing: border-box;
-}
-
-.app-title {
-    font-size: 16px; /* ขยายขนาดตัวหนังสือชื่อแอปจาก 14px เป็น 16px */
-    font-weight: bold;
+    padding: 14px 18px;
+    margin: 10px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
     color: white;
-}
-
-.btn-back {
-    background: transparent;
-    border: 1px solid var(--text-muted);
-    color: var(--text-muted);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
+    font-family: 'Prompt', sans-serif;
     font-size: 14px;
-    transition: 0.3s;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.btn-back:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border-color: white;
+input:focus {
+    outline: none;
+    border-color: var(--theme-orange);
+    box-shadow: 0 0 15px rgba(255, 158, 44, 0.3), inset 0 2px 4px rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.7);
 }
 
 /* =========================================
@@ -311,20 +437,29 @@ body {
 }
 
 .history-card {
-    background: var(--dark-glass);
+    background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(15px);
     border: 1px solid var(--dark-border);
+    border-top: 1px solid var(--glass-highlight);
     border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.history-card:hover {
+    border-color: rgba(255, 158, 44, 0.4);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    transform: translateY(-2px);
 }
 
 .history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 12px;
     margin-bottom: 15px;
     font-size: 13px;
     color: #aaa;
@@ -338,15 +473,16 @@ body {
 }
 
 .history-header .avatar {
-    width: 24px;
-    height: 24px;
-    background: #00dc5a;
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, var(--theme-orange), var(--theme-pink));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     color: white;
+    box-shadow: 0 2px 8px var(--theme-glow);
 }
 
 .history-body {
@@ -356,67 +492,79 @@ body {
 }
 
 .history-logo {
-    width: 55px;
-    height: 55px;
+    width: 60px;
+    height: 60px;
     background: #fff;
     border-radius: 12px;
     padding: 6px;
     box-sizing: border-box;
     object-fit: contain;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-.history-info {
-    flex: 1;
-}
+.history-info { flex: 1; }
 
 .history-title {
-    font-size: 15px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 600;
     color: #fff;
     margin-bottom: 4px;
 }
 
 .history-sub {
     font-size: 13px;
-    color: #ffb74d;
+    color: var(--theme-orange);
 }
 
 .btn-view-details {
-    background: rgba(0, 220, 90, 0.15);
-    color: #00DC5A;
-    border: 1px solid rgba(0, 220, 90, 0.3);
-    padding: 8px 14px;
-    border-radius: 8px;
+    background: rgba(255, 158, 44, 0.15);
+    color: var(--theme-orange);
+    border: 1px solid rgba(255, 158, 44, 0.3);
+    padding: 8px 16px;
+    border-radius: 10px;
     font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
     white-space: nowrap;
 }
 
 .btn-view-details:hover {
-    background: #00DC5A;
+    background: var(--theme-orange);
     color: #fff;
+    box-shadow: 0 4px 12px var(--theme-glow);
 }
 
 .history-footer {
     margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px dashed rgba(255,255,255,0.1);
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255,255,255,0.15);
     font-size: 12px;
-    color: #888;
+    color: #999;
     display: flex;
     align-items: center;
 }
 
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.4); }
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.25); 
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--theme-orange); }
+
 /* =========================================
-   📱 โค้ด Responsive จัดหน้าตาสำหรับมือถือ
+   Responsive จัดหน้าตาสำหรับมือถือ
    ========================================= */
 @media (max-width: 768px) {
     /* 1. จัดระเบียบ Navbar */
     .navbar {
         flex-direction: column;
-        padding: 15px 10px;
+        padding: 15px 15px;
         gap: 15px;
+        border-radius: 16px;
+        margin: 10px;
     }
     .brand img {
         height: 60px !important; 
@@ -430,9 +578,8 @@ body {
 
     /* 2. จัดการกล่องแอปให้แสดง 2 กล่องต่อ 1 แถว และลดความกว้างแนวนอน */
     .app-grid {
-        /* บังคับความกว้างกล่องให้อยู่ระหว่าง 120px ถึงสูงสุดไม่เกิน 160px */
         grid-template-columns: repeat(2, minmax(120px, 160px)); 
-        justify-content: center; /* จัดให้กล่องทั้ง 2 แถวอยู่กึ่งกลางหน้าจอ */
+        justify-content: center; 
         gap: 15px; 
         padding: 10px 15px;
     }
@@ -440,17 +587,17 @@ body {
     .app-card {
         padding: 15px 10px; 
         min-height: 110px; 
-        width: 100%; /* ให้กล่องกางออกพอดีกับขนาด 160px ที่เราตั้งไว้ด้านบน */
+        width: 100%; 
         box-sizing: border-box;
     }
     .app-icon {
-        width: 100px; /* ย่อขนาดกรอบโลโก้ลงให้พอดีมือถือ */
+        width: 100px; 
         height: 100px;
         margin-bottom: 10px;
         border-radius: 14px;
     }
     .app-title {
-        font-size: 13px; /* ปรับขนาดตัวหนังสือชื่อแอปให้พอดี */
+        font-size: 13px; 
     }
 
     /* 3. จัดการกล่องสินค้าด้านใน (แพ็กเกจย่อย) ให้เรียงตรงกลาง */
@@ -470,12 +617,12 @@ body {
     /* 4. จัดการหน้าต่าง Pop-up (ล็อกอิน / ใบเสร็จ) */
     .modal-content {
         width: 90%;
-        padding: 20px;
+        padding: 25px 20px;
         box-sizing: border-box;
     }
     button {
         padding: 12px;
-        font-size: 16px;
+        font-size: 15px;
         width: 100%;
     }
     .navbar button {
