@@ -320,12 +320,6 @@ def check_expire():
 
             update_url = f"{supabase_url}/rest/v1/products?id=eq.{p['id']}"
             requests.patch(update_url, headers=headers, json={"status": "pending_reset"})
-
-        # ส่งเข้า LINE
-        if line_token:
-            line_notify_api = 'https://notify-api.line.me/api/notify'
-            line_headers = {'Authorization': f'Bearer {line_token}'}
-            requests.post(line_notify_api, headers=line_headers, data={'message': "\n".join(line_messages)})
         
         # ส่งเข้า Discord
         if discord_webhook:
