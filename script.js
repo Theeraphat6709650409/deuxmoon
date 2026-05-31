@@ -218,7 +218,6 @@ function handleAppClick(appId, appName) {
     renderPackages(appId, appName);
 }
 
-// ฟังก์ชันอัปเดตราคาบนหน้าจอให้ลูกค้าเห็นทันทีเมื่อกดติ๊กประกัน
 function updatePriceDisplay(platform, duration) {
     const checkbox = document.getElementById(`warranty-${platform}-${duration}`);
     const priceContainer = document.getElementById(`price-display-${platform}-${duration}`);
@@ -272,18 +271,28 @@ function renderPackages(configId, title) {
             }
         }
 
-        // --- ระบบสร้างกล่องประกันเคลม Netflix ---
+        // --- ระบบสร้างกล่องประกันเคลมแยกเรทแม่ค้า ---
         let isNetflix = pack.p.startsWith('netflix');
         let warrantyHtml = '';
         let warrantyAddon = 0;
         let hasWarrantyOption = false;
 
         if (isNetflix) {
-            if (pack.d === 7) warrantyAddon = 10;
-            else if (pack.d === 30) warrantyAddon = 25;
-            
-            if (warrantyAddon > 0) {
+            if (pack.d === 7 || pack.d === 30) {
                 hasWarrantyOption = true;
+                
+                if (isReseller) {
+                    if (pack.d === 7) {
+                        warrantyAddon = 5;
+                    } else if (pack.d === 30) {
+                        warrantyAddon = (pack.p === 'netflix_mobile') ? 23 : 25;
+                    }
+                } else {
+                    warrantyAddon = (pack.d === 7) ? 10 : 25;
+                }
+                
+                let addonText = warrantyAddon > 0 ? `+${warrantyAddon} ฿` : `ฟรี`;
+                
                 warrantyHtml = `
                     <div style="margin-top: 10px; margin-bottom: 10px; font-size: 13px; text-align: left; background: rgba(0, 220, 90, 0.1); border: 1px solid rgba(0, 220, 90, 0.3); padding: 8px; border-radius: 6px;">
                         <label style="display: flex; align-items: center; cursor: pointer; gap: 8px; margin: 0;">
@@ -294,7 +303,7 @@ function renderPackages(configId, title) {
                                    data-addon="${warrantyAddon}"
                                    onchange="updatePriceDisplay('${pack.p}', ${pack.d})" 
                                    style="cursor: pointer; width: 16px; height: 16px; accent-color: #00dc5a;">
-                            <span style="color: #00dc5a; font-weight: 500;">รับประกันเคลมบัญชี (+${warrantyAddon} ฿)</span>
+                            <span style="color: #00dc5a; font-weight: 500;">รับประกันเคลมบัญชี (${addonText})</span>
                         </label>
                     </div>
                 `;
@@ -343,7 +352,6 @@ async function buyProduct(platform, duration_days, basePrice, displayName, hasWa
 
     const user = JSON.parse(userStr);
     
-    // คำนวณราคาประกัน (ถ้ามี)
     let isWarrantySelected = false;
     let finalPrice = basePrice;
     let warrantyText = '';
@@ -354,7 +362,8 @@ async function buyProduct(platform, duration_days, basePrice, displayName, hasWa
             isWarrantySelected = true;
             let addon = parseFloat(checkbox.getAttribute('data-addon'));
             finalPrice += addon;
-            warrantyText = `<br><span style="color: #00dc5a; font-size: 14px;">✅ บวกประกันเคลมบัญชี (+${addon} บาท)</span>`;
+            let addonDisplay = addon > 0 ? `(+${addon} บาท)` : `(ฟรี)`;
+            warrantyText = `<br><span style="color: #00dc5a; font-size: 14px;">✅ บวกประกันเคลมบัญชี ${addonDisplay}</span>`;
         }
     }
 
@@ -406,10 +415,9 @@ async function buyProduct(platform, duration_days, basePrice, displayName, hasWa
                 }
             }
 
-            // ถ้ามีการซื้อประกัน จะแสดงหลักฐานการเคลมในใบเสร็จ
             let receiptHtml = `
                 <div>แพลตฟอร์ม: <span>${displayName}</span></div>
-                ${data.warranty_addon > 0 ? `<div style="color: #00dc5a; font-weight: bold; margin-bottom: 5px;">✅ สั่งซื้อแบบรวมประกันเคลมบัญชี</div>` : ''}
+                ${data.has_warranty ? `<div style="color: #00dc5a; font-weight: bold; margin-bottom: 5px;">✅ สั่งซื้อแบบรวมประกันเคลมบัญชี</div>` : ''}
                 <div>บัญชี (ล็อกอิน): <span>${data.account_login || data.login}</span></div>
             `;
             if (data.account_password || data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.account_password || data.password}</span></div>`;

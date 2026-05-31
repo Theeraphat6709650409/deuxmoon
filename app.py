@@ -104,7 +104,7 @@ def buy_product(current_user_id):
     data = request.json
     platform = data.get('platform')
     duration_days = data.get('duration_days')
-    warranty = data.get('warranty', False) # <--- เพิ่มตัวแปรรับค่าประกัน
+    warranty = data.get('warranty', False)
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -116,7 +116,6 @@ def buy_product(current_user_id):
         current_credit = float(user['credit_balance'])
         user_role = user.get('role', 'normal')
 
-        # จัดเรียงตามบัญชี (account_login) -> ตามด้วยชื่อจอ (profile_name) -> และลำดับเก่าใหม่ (id)
         get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&order=account_login.asc,profile_name.asc,id.asc&limit=1"
         res = requests.get(get_url, headers=headers)
         products = res.json()
@@ -124,7 +123,6 @@ def buy_product(current_user_id):
         if not products: return jsonify({'status': 'error', 'message': 'สินค้าหมดชั่วคราว'}), 404
         target_product = products[0]
         
-        # --- ระบบคำนวณราคาส่ง ---
         normal_price = float(target_product['price'])
         wholesale_price = target_product.get('wholesale_price')
         
@@ -133,20 +131,28 @@ def buy_product(current_user_id):
         else:
             base_price = normal_price
             
-        # --- ระบบบวกค่าประกันเคลม Netflix ---
+        # --- ระบบบวกค่าประกันเคลมแยกเรทราคา แม่ค้า / ลูกค้าทั่วไป ---
         warranty_addon = 0
         if warranty and platform.startswith('netflix'):
-            if int(duration_days) == 7:
-                warranty_addon = 10
-            elif int(duration_days) == 30:
-                warranty_addon = 25
+            if user_role == 'reseller':
+                if int(duration_days) == 7:
+                    warranty_addon = 5
+                elif int(duration_days) == 30:
+                    if platform == 'netflix_mobile':
+                        warranty_addon = 23
+                    else: # netflix_tv
+                        warranty_addon = 25
+            else:
+                if int(duration_days) == 7:
+                    warranty_addon = 10
+                elif int(duration_days) == 30:
+                    warranty_addon = 25
                 
-        price = base_price + warranty_addon # นำราคาสุทธิไปบวกเพิ่มประกัน
-        # ----------------------
+        price = base_price + warranty_addon
+        # ----------------------------------------------------
 
         if current_credit < price: return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
-       # --- ระบบคำนวณวันหมดอายุอัตโนมัติแบบใหม่ ---
         tz = datetime.timezone(datetime.timedelta(hours=7)) 
         now = datetime.datetime.now(tz)
         duration = int(duration_days)
@@ -163,7 +169,6 @@ def buy_product(current_user_id):
             expire_time = now + datetime.timedelta(days=days_to_add)
             formatted_expire = expire_time.strftime('%Y-%m-%d')
         
-        # อัปเดตสถานะและใส่วันหมดอายุลงในตาราง products
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{target_product['id']}&status=eq.available"
         update_payload = {"status": "sold", "expire_date": formatted_expire}
         update_res = requests.patch(update_url, headers=headers, json=update_payload)
@@ -179,12 +184,13 @@ def buy_product(current_user_id):
             "user_id": current_user_id, "product_id": target_product['id'],
             "platform": purchased_account.get('platform', ''), "account_login": purchased_account.get('account_login', ''),
             "account_password": purchased_account.get('account_password', ''), "profile_name": purchased_account.get('profile_name', ''),
-            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price # บันทึกราคารวมประกันลงประวัติด้วย
+            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price
         }
         requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
         
         purchased_account['expire_date'] = formatted_expire
-        purchased_account['warranty_addon'] = warranty_addon # แนบไปบอกหน้าเว็บว่าซื้อประกันสำเร็จ
+        purchased_account['warranty_addon'] = warranty_addon
+        purchased_account['has_warranty'] = warranty
         return jsonify({'status': 'success', 'data': purchased_account, 'remaining_credit': new_credit})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
