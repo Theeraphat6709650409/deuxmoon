@@ -131,7 +131,6 @@ def buy_product(current_user_id):
         else:
             base_price = normal_price
             
-        # --- ระบบบวกค่าประกันเคลมแยกเรทราคา แม่ค้า / ลูกค้าทั่วไป ---
         warranty_addon = 0
         if warranty and platform.startswith('netflix'):
             if user_role == 'reseller':
@@ -140,7 +139,7 @@ def buy_product(current_user_id):
                 elif int(duration_days) == 30:
                     if platform == 'netflix_mobile':
                         warranty_addon = 23
-                    else: # netflix_tv
+                    else:
                         warranty_addon = 25
             else:
                 if int(duration_days) == 7:
@@ -149,7 +148,6 @@ def buy_product(current_user_id):
                     warranty_addon = 25
                 
         price = base_price + warranty_addon
-        # ----------------------------------------------------
 
         if current_credit < price: return jsonify({'status': 'error', 'message': 'ยอดเงินไม่เพียงพอ กรุณาเติมเงิน'}), 400
         
@@ -180,11 +178,13 @@ def buy_product(current_user_id):
         new_credit = current_credit - price
         requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={"credit_balance": new_credit})
         
+        # เพิ่มบรรทัด "has_warranty": warranty เข้าไปเพื่อให้บันทึกลงฐานข้อมูลประวัติ
         purchase_payload = {
             "user_id": current_user_id, "product_id": target_product['id'],
             "platform": purchased_account.get('platform', ''), "account_login": purchased_account.get('account_login', ''),
             "account_password": purchased_account.get('account_password', ''), "profile_name": purchased_account.get('profile_name', ''),
-            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price
+            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price,
+            "has_warranty": warranty 
         }
         requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
         

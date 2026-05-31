@@ -26,22 +26,14 @@
     </div>
 
     <div id="details-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 9999;">
-        <div style="background: #1a1a2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid #00dc5a; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background: #1a1a2e; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid #00dc5a; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;">
             <h2 style="color: #00dc5a; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; text-align: center;">รายละเอียดบัญชี</h2>
             
             <div id="details-body" style="text-align: left; font-size: 15px; line-height: 1.8; margin-top: 15px; color: white;">
             </div>
 
-            <div style="margin-top: 20px; text-align: center;">
-                <button onclick="copyAll()" style="background: #00dc5a; color: white; border: none; padding: 11px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px; transition: 0.2s;">📋 คัดลอกข้อมูลทั้งหมด</button>
-                <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 6px 0;">
-                    <div style="display: table-cell; width: 50%;">
-                        <button onclick="copyLogin()" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid #555; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px;">👤 คัดลอกบัญชี</button>
-                    </div>
-                    <div style="display: table-cell; width: 50%;">
-                        <button onclick="copyPassword()" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid #555; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px;">🔑 คัดลอกรหัสผ่าน</button>
-                    </div>
-                </div>
+            <div id="details-buttons" style="margin-top: 20px; text-align: center;">
+                <!-- ปุ่มจะถูกแทรกเข้ามาตรงนี้อัตโนมัติ -->
             </div>
 
             <button onclick="closeDetails()" style="margin-top: 20px; background: #333; color: white; border: 1px solid #555; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 15px;">ปิดหน้าต่าง</button>
@@ -53,7 +45,6 @@
         let historyData = [];
         let activeItemIndex = null; 
 
-        // ระบบ Toast แจ้งเตือนของ SweetAlert2
         function showToast(icon, title) {
             Swal.fire({
                 toast: true, position: 'top-end', icon: icon, title: title,
@@ -178,6 +169,9 @@
                 const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
                 const dateStr = formatThaiDate(item.created_at);
                 const refId = item.id ? String(item.id).substring(0, 8) : '000' + index;
+                
+                // ตรวจสอบว่ามีประกันหรือไม่ แล้วเพิ่มป้ายสีเขียวลงในชื่อ
+                const warrantyBadge = item.has_warranty ? `<span style="color: #111; background: #00dc5a; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; vertical-align: middle;">มีประกัน</span>` : '';
 
                 listDiv.innerHTML += `
                     <div class="history-card">
@@ -191,7 +185,7 @@
                         <div class="history-body">
                             <img src="${appInfo.logo}" class="history-logo" alt="logo">
                             <div class="history-info">
-                                <div class="history-title">${appInfo.name}</div>
+                                <div class="history-title">${appInfo.name} ${warrantyBadge}</div>
                                 <div class="history-sub">${appInfo.subText}</div>
                             </div>
                             <button class="btn-view-details" onclick="viewDetails(${index})">👁 ดูข้อมูล</button>
@@ -222,8 +216,10 @@
                 }
             }
 
+            // แสดงสถานะประกันในหน้าต่างละเอียด
             let receiptHtml = `
                 <div style="margin-bottom: 8px;"><span style="color:#888;">แพลตฟอร์ม:</span> <strong style="color:#fff;">${displayName}</strong></div>
+                ${item.has_warranty ? `<div style="color: #00dc5a; font-weight: bold; margin-bottom: 8px; padding: 5px; background: rgba(0, 220, 90, 0.1); border-radius: 4px;">✅ สินค้านี้มีประกันเคลมบัญชี</div>` : ''}
                 <div style="margin-bottom: 8px;"><span style="color:#888;">บัญชี (ล็อกอิน):</span> <strong style="color:#fff;">${item.account_login || '-'}</strong></div>
             `;
             if (item.account_password) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสผ่าน:</span> <strong style="color:#00dc5a;">${item.account_password}</strong></div>`;
@@ -231,7 +227,31 @@
             if (item.pin_code) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสเข้าจอ (PIN):</span> <strong style="color:#ffb74d;">${item.pin_code}</strong></div>`;
             receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">วันหมดอายุ:</span> <strong style="color:#ff4d4d;">${displayExpire}</strong></div>`;
 
+            // วาดปุ่มด้านล่าง โดยเช็คถ้ามีประกันให้แสดงปุ่มติดต่อเคลมสีแดง
+            let buttonsHtml = '';
+            if (item.has_warranty) {
+                // *** อย่าลืมแก้ไขลิงก์ในบรรทัดด้านล่างนี้ ให้เป็นลิงก์ Line หรือ Facebook ของร้านคุณ ***
+                const contactLink = "https://lin.ee/LINK_LINE_ของแม่ค้า"; 
+                
+                buttonsHtml += `
+                    <button onclick="window.open('${contactLink}', '_blank')" style="background: #ff4d4d; color: white; border: none; padding: 11px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(255, 77, 77, 0.2);">🛠 แจ้งเคลมบัญชี (ติดต่อแม่ค้า)</button>
+                `;
+            }
+
+            buttonsHtml += `
+                <button onclick="copyAll()" style="background: #00dc5a; color: white; border: none; padding: 11px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px; transition: 0.2s;">📋 คัดลอกข้อมูลทั้งหมด</button>
+                <div style="display: table; width: 100%; border-collapse: separate; border-spacing: 6px 0;">
+                    <div style="display: table-cell; width: 50%;">
+                        <button onclick="copyLogin()" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid #555; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px;">👤 คัดลอกบัญชี</button>
+                    </div>
+                    <div style="display: table-cell; width: 50%;">
+                        <button onclick="copyPassword()" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid #555; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 13px;">🔑 คัดลอกรหัสผ่าน</button>
+                    </div>
+                </div>
+            `;
+
             document.getElementById('details-body').innerHTML = receiptHtml;
+            document.getElementById('details-buttons').innerHTML = buttonsHtml;
             document.getElementById('details-modal').style.display = 'flex';
         }
 
@@ -294,12 +314,13 @@
                 }
             }
 
-            let textOutput = `แพลตฟอร์ม: ${displayName}\n`;
-            textOutput += `บัญชี (ล็อกอิน): ${item.account_login || '-'}\n`;
+            let textOutput = `Platform: ${displayName}\n`;
+            if (item.has_warranty) textOutput += `✅ สินค้านี้มีประกันเคลมบัญชี\n`;
+            textOutput += `Account (ล็อกอิน): ${item.account_login || '-'}\n`;
             if (item.account_password) textOutput += `รหัสผ่าน: ${item.account_password}\n`;
-            textOutput += `เข้าใช้งานจอ: ${item.profile_name || '-'}\n`;
+            textOutput += `Profile: ${item.profile_name || '-'}\n`;
             if (item.pin_code) textOutput += `รหัสเข้าจอ (PIN): ${item.pin_code}\n`;
-            textOutput += `วันหมดอายุ: ${displayExpire}\n\n`;
+            textOutput += `Expire: ${displayExpire}\n\n`;
             
             textOutput += `📓กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- 🥺🥓\n \n ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\n ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\n ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n 1 จอ = รับชมทีละ 1 อุปกรณ์\n ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี📺❌\n หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n \n =- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
 
