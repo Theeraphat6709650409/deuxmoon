@@ -101,23 +101,24 @@
 
         function getAppInfo(platform, created_at, expire_date) {
             platform = platform || 'unknown'; 
-            const apps = {
-                'netflix': { name: 'NETFLIX', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
-                'disney': { name: 'DISNEY+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
-                'iqiyi': { name: 'iQIYI', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/IQIYI_logo_(2022).svg' },
-                'wetv': { name: 'WeTV', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/WeTV_logo.svg' },
-                'viu': { name: 'Viu', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Viu_logo.svg' },
-                'prime': { name: 'Prime Video', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_Prime_Video_logo.svg' },
-                'hbo': { name: 'HBO Max', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Max_logo.svg' },
-                'oned': { name: 'OneD', logo: 'https://ui-avatars.com/api/?name=OneD&background=00A1E4&color=fff&font-size=0.33&bold=true' },
-                'ch3': { name: 'Ch3 Plus', logo: 'https://ui-avatars.com/api/?name=Ch3&background=004A8F&color=fff&font-size=0.33&bold=true' },
-                'bilibili': { name: 'Bilibili', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Bilibili_logo.svg' },
-                'spotify': { name: 'Spotify', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Spotify_logo-without-text.svg' },
-                'canva': { name: 'Canva', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Canva_icon_2021.svg' },
-                'monomax': { name: 'Mono Max', logo: 'https://ui-avatars.com/api/?name=Mono&background=E4002B&color=fff&font-size=0.33&bold=true' },
-                'trueid': { name: 'TrueID+', logo: 'https://ui-avatars.com/api/?name=TrueID&background=FF0000&color=fff&font-size=0.33&bold=true' },
-                'chatgpt': { name: 'ChatGPT+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' }
-            };
+            // แทนที่ตัวแปร appList เดิมด้วยชุดข้อมูลที่มีลิงก์โลโก้จริง
+            const appList = [
+                { id: 'netflix', name: 'NETFLIX', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
+                { id: 'disney', name: 'DISNEY+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
+                { id: 'iqiyi', name: 'iQIYI', img: 'https://play-lh.googleusercontent.com/L40FnQ8nF8zRtUdALz9b23JirsxYA5-0_fkRUlFBMymud09ctBCFrNui4l-ES_V6Uw=w1024' },
+                { id: 'wetv', name: 'WeTV', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/WeTV_logo.svg' },
+                { id: 'viu', name: 'Viu', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Viu_logo.svg' },
+                { id: 'prime', name: 'Prime Video', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_Prime_Video_logo.svg' },
+                { id: 'hbo', name: 'HBO Max', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Max_logo.svg' },
+                { id: 'oned', name: 'OneD', img: 'https://www.ais.th/content/ais/th/th_th/consumers/entertainment/streaming-app/one-d/_jcr_content/root/container_1816311984/aiscontainer/columncontrol_copy_c/content1/image.coreimg.png/1742182598629/logo-oned-b.png' },
+                { id: 'ch3', name: 'Ch3 Plus', img: 'https://assets.ch3plus.com/ch3plus_logo.png' },
+                { id: 'bilibili', name: 'Bilibili', img: 'https://img.icons8.com/color/1200/bilibili.jpg' },
+                { id: 'spotify', name: 'Spotify', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Spotify_icon.svg/1280px-Spotify_icon.svg.png' },
+                { id: 'canva', name: 'Canva', img: 'https://www.edigitalagency.com.au/wp-content/uploads/Canva-logo-PNG-large-size.png' },
+                { id: 'monomax', name: 'Mono Max', img: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
+                { id: 'trueid', name: 'TrueID+', img: 'https://cms.dmpcdn.com/misc/2022/02/09/af7de880-89ab-11ec-8c0c-590a22d85d91_webp_original.webp' },
+                { id: 'chatgpt', name: 'ChatGPT+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' }
+            ];
 
             let baseApp = platform;
             let subText = "แพ็กเกจมาตรฐาน";
