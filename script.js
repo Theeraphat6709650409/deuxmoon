@@ -178,10 +178,20 @@ function initStore() {
     const grid = document.getElementById('app-grid');
     grid.innerHTML = '';
     appList.forEach(app => {
+        // ค้นหาและนับจำนวนสินค้าในสต็อกที่มี platform ขึ้นต้นด้วย id ของแอปนั้นๆ
+        const availableItems = globalStock.filter(item => item.platform.startsWith(app.id));
+        const count = availableItems.length;
+        
+        // สร้างป้ายกำกับสต็อก
+        let stockHtml = count > 0 
+            ? `<div style="font-size: 11px; margin-top: 8px; color: #00dc5a; background: rgba(0, 220, 90, 0.1); border: 1px solid rgba(0, 220, 90, 0.3); padding: 3px 10px; border-radius: 12px; display: inline-block;">พร้อมส่ง ${count} รายการ</div>`
+            : `<div style="font-size: 11px; margin-top: 8px; color: #ff4d4d; background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); padding: 3px 10px; border-radius: 12px; display: inline-block;">สินค้าหมด</div>`;
+
         grid.innerHTML += `
-            <div class="app-card" onclick="handleAppClick('${app.id}', '${app.name}')">
+            <div class="app-card" onclick="handleAppClick('${app.id}', '${app.name}')" style="display: flex; flex-direction: column; align-items: center; padding-bottom: 15px;">
                 <div class="app-icon"><img src="${app.img}" alt="${app.name} logo"></div>
                 <div class="app-title">${app.name}</div>
+                ${stockHtml}
             </div>
         `;
     });
