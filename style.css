@@ -11,7 +11,7 @@
     --theme-orange: #ff9e2c;
     --theme-pink: #d81b60;
     --theme-purple: #5c35b1;
-    --theme-glow: rgba(255, 158, 44, 0.4); /* แสงเรืองรองสีส้ม */
+    --theme-glow: rgba(255, 158, 44, 0.4); 
     
     /* ชุดสีกระจกใส (โทนม่วงเข้มอวกาศ) */
     --dark-glass: rgba(28, 12, 50, 0.55);
@@ -25,7 +25,6 @@
 
 body {
     font-family: 'Prompt', 'Segoe UI', Roboto, sans-serif;
-    /* อิงจากชื่อไฟล์รูปภาพล่าสุดที่คุณส่งมา */
     background-image: url('4F36D6F4-6C48-4405-BDF3-E06B9EDDAEDF.png'); 
     background-color: var(--bg-color);
     background-size: cover;
@@ -49,7 +48,7 @@ body {
     to { transform: scale(1); opacity: 1; }
 }
 
-/* --- Navigation Bar (Floating Glass) --- */
+/* --- Navigation Bar (อยู่ที่เดิม ไม่ลอยตามจอ) --- */
 .navbar {
     background: rgba(20, 8, 45, 0.65);
     backdrop-filter: blur(25px);
@@ -63,8 +62,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: sticky;
-    top: 15px;
+    position: relative; /* ปรับเป็น relative ให้อยู่กับที่ */
     z-index: 100;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
@@ -85,6 +83,23 @@ body {
 
 .brand img:hover {
     transform: scale(1.05) rotate(-2deg);
+}
+
+/* --- ปุ่ม Hamburger (ซ่อนไว้เมื่อดูในคอม) --- */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    z-index: 101;
+}
+
+.hamburger span {
+    width: 28px;
+    height: 3px;
+    background: var(--theme-orange);
+    border-radius: 4px;
+    transition: all 0.3s ease-in-out;
 }
 
 .user-menu {
@@ -284,7 +299,7 @@ body {
     text-shadow: 0 0 10px rgba(255, 158, 44, 0.3);
 }
 
-/* --- ปุ่มซื้อเลย เปลี่ยนสีเป็นส้ม-ชมพู --- */
+/* --- ปุ่มซื้อเลย --- */
 .btn-buy {
     width: 100%;
     padding: 14px;
@@ -558,25 +573,69 @@ input:focus {
    Responsive จัดหน้าตาสำหรับมือถือ
    ========================================= */
 @media (max-width: 768px) {
-    /* 1. จัดระเบียบ Navbar */
+    /* 1. จัดระเบียบ Navbar (Hamburger Layout) */
     .navbar {
-        flex-direction: column;
-        padding: 15px 15px;
-        gap: 15px;
+        flex-wrap: wrap; /* ยอมให้ส่วนประกอบตกลงมาบรรทัดใหม่ */
+        padding: 15px 20px;
         border-radius: 16px;
-        margin: 10px;
+        margin: 15px 10px;
     }
+    
     .brand img {
-        height: 60px !important; 
-    }
-    .user-menu {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
+        height: 50px !important; 
     }
 
-    /* 2. จัดการกล่องแอปให้แสดง 2 กล่องต่อ 1 แถว และลดความกว้างแนวนอน */
+    /* แสดงปุ่มแฮมเบอร์เกอร์จัดไว้มุมขวาบน */
+    .hamburger {
+        display: flex;
+        order: 2; 
+        margin-top: 12px;
+    }
+
+    /* ซ่อนแถบเมนู (Topup, History, Logout) ด้วยความสูง 0 */
+    .user-menu {
+        order: 3;
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 0; 
+        overflow: hidden; 
+        opacity: 0;
+        margin-top: 0;
+        padding-top: 0;
+        transition: all 0.4s ease-in-out;
+    }
+
+    /* เมื่อกดแฮมเบอร์เกอร์ จะเพิ่มคลาส mobile-active เพื่อดึงเมนูลงมา */
+    .navbar.mobile-active .user-menu {
+        max-height: 400px;
+        opacity: 1;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* แอนิเมชันปุ่มแฮมเบอร์เกอร์เปลี่ยนเป็นกากบาท */
+    .navbar.mobile-active .hamburger span:nth-child(1) {
+        transform: translateY(9px) rotate(45deg);
+    }
+    .navbar.mobile-active .hamburger span:nth-child(2) {
+        opacity: 0;
+    }
+    .navbar.mobile-active .hamburger span:nth-child(3) {
+        transform: translateY(-9px) rotate(-45deg);
+    }
+
+    /* จัดปุ่มใน Hamburger ให้เต็มหน้าจอและเรียงตรงกลาง */
+    .menu-btn, .btn-topup, .wallet-badge {
+        width: 100%;
+        text-align: center;
+        margin-left: 0;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    /* 2. จัดการกล่องแอปให้แสดง 2 กล่องต่อ 1 แถว */
     .app-grid {
         grid-template-columns: repeat(2, minmax(120px, 160px)); 
         justify-content: center; 
@@ -600,7 +659,7 @@ input:focus {
         font-size: 13px; 
     }
 
-    /* 3. จัดการกล่องสินค้าด้านใน (แพ็กเกจย่อย) ให้เรียงตรงกลาง */
+    /* 3. จัดการกล่องสินค้าด้านในให้เรียงตรงกลาง */
     #product-container, #package-container {
         display: flex;
         flex-direction: column;
