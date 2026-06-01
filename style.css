@@ -62,7 +62,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: relative; /* ปรับเป็น relative ให้อยู่กับที่ */
+    position: relative;
     z-index: 100;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
@@ -77,8 +77,9 @@ body {
 .brand img {
     height: 55px !important;
     border-radius: 12px;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    will-change: transform;
 }
 
 .brand img:hover {
@@ -99,7 +100,7 @@ body {
     height: 3px;
     background: var(--theme-orange);
     border-radius: 4px;
-    transition: all 0.3s ease-in-out;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .user-menu {
@@ -133,8 +134,9 @@ body {
     cursor: pointer;
     font-weight: 600;
     font-family: 'Prompt', sans-serif;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     box-shadow: 0 4px 15px rgba(216, 27, 96, 0.4);
+    will-change: transform, box-shadow;
 }
 
 .btn-topup:hover {
@@ -184,7 +186,9 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 150px; 
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* ระบุเฉพาะค่าที่ต้องการให้แอนิเมชันทำงานเพื่อลดภาระเครื่อง */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: transform, box-shadow;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     animation: fadeInUp 0.5s ease-out backwards;
 }
@@ -205,7 +209,8 @@ body {
     margin-bottom: 15px;
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    transition: all 0.4s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform, box-shadow;
 }
 
 .app-card:hover .app-icon {
@@ -250,7 +255,9 @@ body {
     width: 100%;
     max-width: 280px; 
     box-sizing: border-box;
-    transition: all 0.4s ease;
+    /* เปลี่ยนจาก transition: all เป็นการระบุแบบเจาะจง */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: transform, box-shadow;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     position: relative;
     overflow: hidden;
@@ -264,7 +271,7 @@ body {
     height: 3px;
     background: linear-gradient(90deg, var(--theme-orange), var(--theme-pink), var(--theme-orange));
     background-size: 200% auto;
-    animation: gradientShift 3s linear infinite;
+    animation: gradientShift 4s linear infinite; /* ปรับลดความเร็วแอนิเมชันให้กินเครื่องน้อยลง */
     opacity: 0.9;
 }
 
@@ -311,7 +318,8 @@ body {
     cursor: pointer;
     color: white;
     background: linear-gradient(135deg, var(--theme-orange) 0%, var(--theme-pink) 100%);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    will-change: transform, box-shadow;
     box-shadow: 0 6px 15px var(--theme-glow);
 }
 
@@ -344,7 +352,7 @@ body {
     font-family: 'Prompt', sans-serif;
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     margin-bottom: 25px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
@@ -373,7 +381,7 @@ body {
     max-width: 400px;
     margin: 40px auto;
     text-align: center;
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: popIn 0.3s ease-out;
 }
 
 .modal-overlay {
@@ -391,7 +399,7 @@ body {
     padding: 30px;
     width: 90%;
     max-width: 400px;
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: popIn 0.3s ease-out;
 }
 
 .modal-title {
@@ -430,7 +438,7 @@ input[type="text"], input[type="email"], input[type="password"], input[type="num
     color: white;
     font-family: 'Prompt', sans-serif;
     font-size: 14px;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     box-sizing: border-box;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
@@ -460,7 +468,8 @@ input:focus {
     padding: 20px;
     margin-bottom: 18px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: transform;
 }
 
 .history-card:hover {
@@ -540,7 +549,7 @@ input:focus {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
     white-space: nowrap;
 }
 
@@ -573,9 +582,8 @@ input:focus {
    Responsive จัดหน้าตาสำหรับมือถือ
    ========================================= */
 @media (max-width: 768px) {
-    /* 1. จัดระเบียบ Navbar (Hamburger Layout) */
     .navbar {
-        flex-wrap: wrap; /* ยอมให้ส่วนประกอบตกลงมาบรรทัดใหม่ */
+        flex-wrap: wrap; 
         padding: 15px 20px;
         border-radius: 16px;
         margin: 15px 10px;
@@ -585,14 +593,12 @@ input:focus {
         height: 50px !important; 
     }
 
-    /* แสดงปุ่มแฮมเบอร์เกอร์จัดไว้มุมขวาบน */
     .hamburger {
         display: flex;
         order: 2; 
         margin-top: 12px;
     }
 
-    /* ซ่อนแถบเมนู (Topup, History, Logout) ด้วยความสูง 0 */
     .user-menu {
         order: 3;
         width: 100%;
@@ -603,10 +609,9 @@ input:focus {
         opacity: 0;
         margin-top: 0;
         padding-top: 0;
-        transition: all 0.4s ease-in-out;
+        transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, margin-top 0.4s ease-in-out, padding-top 0.4s ease-in-out;
     }
 
-    /* เมื่อกดแฮมเบอร์เกอร์ จะเพิ่มคลาส mobile-active เพื่อดึงเมนูลงมา */
     .navbar.mobile-active .user-menu {
         max-height: 400px;
         opacity: 1;
@@ -615,7 +620,6 @@ input:focus {
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* แอนิเมชันปุ่มแฮมเบอร์เกอร์เปลี่ยนเป็นกากบาท */
     .navbar.mobile-active .hamburger span:nth-child(1) {
         transform: translateY(9px) rotate(45deg);
     }
@@ -626,7 +630,6 @@ input:focus {
         transform: translateY(-9px) rotate(-45deg);
     }
 
-    /* จัดปุ่มใน Hamburger ให้เต็มหน้าจอและเรียงตรงกลาง */
     .menu-btn, .btn-topup, .wallet-badge {
         width: 100%;
         text-align: center;
@@ -635,7 +638,6 @@ input:focus {
         box-sizing: border-box;
     }
 
-    /* 2. จัดการกล่องแอปให้แสดง 2 กล่องต่อ 1 แถว */
     .app-grid {
         grid-template-columns: repeat(2, minmax(120px, 160px)); 
         justify-content: center; 
@@ -659,7 +661,6 @@ input:focus {
         font-size: 13px; 
     }
 
-    /* 3. จัดการกล่องสินค้าด้านในให้เรียงตรงกลาง */
     #product-container, #package-container {
         display: flex;
         flex-direction: column;
@@ -673,7 +674,6 @@ input:focus {
         margin: 0 auto;
     }
 
-    /* 4. จัดการหน้าต่าง Pop-up (ล็อกอิน / ใบเสร็จ) */
     .modal-content {
         width: 90%;
         padding: 25px 20px;
