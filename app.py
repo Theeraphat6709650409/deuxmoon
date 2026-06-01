@@ -403,6 +403,22 @@ def update_product(current_user_id):
         return jsonify({'status': 'success', 'message': 'อัปเดตบัญชีสำเร็จ! สินค้าพร้อมขายแล้ว'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+@app.route('/me', methods=['GET', 'OPTIONS'])
+@token_required
+def get_user_info(current_user_id):
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+    try:
+        res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers)
+        users = res.json()
+        if not users: return jsonify({'status': 'error', 'message': 'ไม่พบบัญชีผู้ใช้'}), 404
+        user = users[0]
+        user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal')}
+        return jsonify({'status': 'success', 'data': user_data})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

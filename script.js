@@ -528,20 +528,47 @@ async function resetPassword() {
     } catch (e) { showAlert('error', 'ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); }
 }
 
-function checkLoginStatus() {
+async function checkLoginStatus() {
     const userStr = localStorage.getItem('user');
-    if (userStr) {
-        const user = JSON.parse(userStr);
-        document.getElementById('menu-guest').style.display = 'none';
-        document.getElementById('menu-logged-in').style.display = 'flex';
+    const token = localStorage.getItem('token');
+    
+    if (userStr && token) {
+        // 1. แสดงข้อมูลเก่าไปก่อน เพื่อให้หน้าเว็บโหลดไว ไม่มีจังหวะกระตุก
+        let user = JSON.parse(userStr);
+        renderUserMenu(user);
         
-        let roleBadge = user.role === 'reseller' ? ' <span style="color:#ffb74d; font-size:12px; border: 1px solid #ffb74d; padding: 2px 5px; border-radius: 4px; margin-left: 5px;">ตัวแทนจำหน่าย</span>' : '';
-        document.getElementById('display-email').innerHTML = user.email + roleBadge;
-        document.getElementById('credit-display').innerText = user.credit_balance;
+        // 2. แอบดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์เบื้องหลัง (Auto-Sync)
+        try {
+            const response = await fetch(`${API_URL}/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // หากแอดมินปรับเครดิต หรืออัปเกรดเป็น Reseller แล้ว ให้อัปเดตข้อมูลทับของเดิมทันที
+                user = result.data;
+                localStorage.setItem('user', JSON.stringify(user));
+                renderUserMenu(user);
+            } else if (result.message === 'เซสชันหมดอายุ กรุณาล็อกอินใหม่') {
+                logout(); // ถ้ารหัสผ่านถูกเปลี่ยน หรือหมดอายุ ให้เด้งออกจากระบบอัตโนมัติ
+            }
+        } catch (e) {
+            console.log("ใช้งานออฟไลน์ หรือเซิร์ฟเวอร์ตอบสนองช้า");
+        }
     } else {
         document.getElementById('menu-guest').style.display = 'flex';
         document.getElementById('menu-logged-in').style.display = 'none';
     }
+}
+
+// แยกฟังก์ชันสำหรับวาด UI เมนูออกมา เพื่อให้เรียกใช้ซ้ำได้
+function renderUserMenu(user) {
+    document.getElementById('menu-guest').style.display = 'none';
+    document.getElementById('menu-logged-in').style.display = 'flex';
+    
+    let roleBadge = user.role === 'reseller' ? ' <span style="color:#ffb74d; font-size:12px; border: 1px solid #ffb74d; padding: 2px 5px; border-radius: 4px; margin-left: 5px;">ตัวแทนจำหน่าย</span>' : '';
+    document.getElementById('display-email').innerHTML = user.email + roleBadge;
+    document.getElementById('credit-display').innerText = user.credit_balance;
 }
 
 window.onload = () => { checkLoginStatus(); fetchProducts(); };
