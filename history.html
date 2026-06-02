@@ -99,7 +99,8 @@
             return `${d} ${m} ${y} เวลา ${time} น.`;
         }
 
-        function getAppInfo(platform, created_at, expire_date) {
+        // --- เปลี่ยนให้รับค่า duration_days แทนการคำนวณวันที่ ---
+        function getAppInfo(platform, duration_days) {
             platform = platform || 'unknown'; 
             const apps = {
                 'netflix': { name: 'NETFLIX', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
@@ -138,14 +139,8 @@
                 else if (type === 'store') subText = 'เมลร้าน (ไม่ต่ออายุ)';
             }
 
-            let durationText = "";
-            if (created_at && expire_date) {
-                let days = Math.round((new Date(expire_date) - new Date(created_at)) / (1000 * 60 * 60 * 24));
-                if (days >= 28 && days <= 31) durationText = " 30 วัน";
-                else if (days >= 6 && days <= 8) durationText = " 7 วัน";
-                else if (days === 1 || days === 2) durationText = " 1 วัน";
-                else durationText = ` ${days} วัน`;
-            }
+            // ใช้ค่า duration_days จากฐานข้อมูลตรงๆ เลย
+            let durationText = duration_days ? ` ${duration_days} วัน` : "";
 
             return {
                 name: (apps[baseApp] ? apps[baseApp].name : platform.toUpperCase()) + durationText,
@@ -166,11 +161,11 @@
             const initial = username.charAt(0).toUpperCase();
 
             data.forEach((item, index) => {
-                const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
+                // ส่ง item.duration_days ไปแทน
+                const appInfo = getAppInfo(item.platform, item.duration_days);
                 const dateStr = formatThaiDate(item.created_at);
                 const refId = item.id ? String(item.id).substring(0, 8) : '000' + index;
                 
-                // ตรวจสอบว่ามีประกันหรือไม่ แล้วเพิ่มป้ายสีเขียวลงในชื่อ
                 const warrantyBadge = item.has_warranty ? `<span style="color: #111; background: #00dc5a; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; vertical-align: middle;">มีประกัน</span>` : '';
 
                 listDiv.innerHTML += `
@@ -203,7 +198,8 @@
             const item = historyData[index];
             if (!item) return;
 
-            const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
+            // ส่ง item.duration_days ไปแทน
+            const appInfo = getAppInfo(item.platform, item.duration_days);
             const displayName = appInfo.name;
             
             let displayExpire = item.expire_date || '-';
@@ -216,7 +212,6 @@
                 }
             }
 
-            // แสดงสถานะประกันในหน้าต่างละเอียด
             let receiptHtml = `
                 <div style="margin-bottom: 8px;"><span style="color:#888;">แพลตฟอร์ม:</span> <strong style="color:#fff;">${displayName}</strong></div>
                 ${item.has_warranty ? `<div style="color: #00dc5a; font-weight: bold; margin-bottom: 8px; padding: 5px; background: rgba(0, 220, 90, 0.1); border-radius: 4px;">✅ สินค้านี้มีประกันเคลมบัญชี</div>` : ''}
@@ -227,12 +222,9 @@
             if (item.pin_code) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสเข้าจอ (PIN):</span> <strong style="color:#ffb74d;">${item.pin_code}</strong></div>`;
             receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">วันหมดอายุ:</span> <strong style="color:#ff4d4d;">${displayExpire}</strong></div>`;
 
-            // วาดปุ่มด้านล่าง โดยเช็คถ้ามีประกันให้แสดงปุ่มติดต่อเคลมสีแดง
             let buttonsHtml = '';
             if (item.has_warranty) {
-                // *** อย่าลืมแก้ไขลิงก์ในบรรทัดด้านล่างนี้ ให้เป็นลิงก์ Line หรือ Facebook ของร้านคุณ ***
                 const contactLink = "https://lin.ee/9DAHkG0"; 
-                
                 buttonsHtml += `
                     <button onclick="window.open('${contactLink}', '_blank')" style="background: #ff4d4d; color: white; border: none; padding: 11px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(255, 77, 77, 0.2);">🛠 แจ้งเคลมบัญชี (ติดต่อADMIN)</button>
                 `;
@@ -301,7 +293,8 @@
             const item = historyData[activeItemIndex];
             if (!item) return;
 
-            const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
+            // ส่ง item.duration_days ไปแทน
+            const appInfo = getAppInfo(item.platform, item.duration_days);
             const displayName = appInfo.name;
             
             let displayExpire = item.expire_date || '-';
@@ -322,12 +315,10 @@
             if (item.pin_code) textOutput += `รหัสเข้าจอ (PIN): ${item.pin_code}\n`;
             textOutput += `Expire: ${displayExpire}\n\n`;
             
-            textOutput += `📓กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- 🥺🥓\n \n ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\n ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\n ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n 1 จอ = รับชมทีละ 1 อุปกรณ์\n ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี📺❌\n หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n \n =- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
+            textOutput += `📓กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- 🥺🥓\n \n ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\n ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\n ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n 1 จอ = รับชมทีละ 1 อุปกรณ์\n ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี📺❌\n หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n \n =- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
 
             executeCopy(textOutput);
         }
-
-        window.onload = loadHistory;
     </script>
 </body>
 </html>
