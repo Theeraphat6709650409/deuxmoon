@@ -99,8 +99,8 @@
             return `${d} ${m} ${y} เวลา ${time} น.`;
         }
 
-        // --- เปลี่ยนให้รับค่า duration_days แทนการคำนวณวันที่ ---
-        function getAppInfo(platform, duration_days) {
+        // --- กลับมาใช้ created_at และ expire_date แต่แก้สูตรคำนวณให้แม่นยำ ---
+        function getAppInfo(platform, created_at, expire_date) {
             platform = platform || 'unknown'; 
             const apps = {
                 'netflix': { name: 'NETFLIX', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
@@ -139,8 +139,17 @@
                 else if (type === 'store') subText = 'เมลร้าน (ไม่ต่ออายุ)';
             }
 
-            // ใช้ค่า duration_days จากฐานข้อมูลตรงๆ เลย
-            let durationText = duration_days ? ` ${duration_days} วัน` : "";
+            let durationText = "";
+            if (created_at && expire_date) {
+                // เปลี่ยนมาใช้ Math.ceil ปัดเศษขึ้นเสมอ
+                let days = Math.ceil((new Date(expire_date) - new Date(created_at)) / (1000 * 60 * 60 * 24));
+                
+                // บังคับตบเข้าเลข 7 และ 30 เพื่อป้องกันเศษชั่วโมง
+                if (days >= 25) durationText = " 30 วัน";
+                else if (days >= 4 && days <= 10) durationText = " 7 วัน";
+                else if (days >= 1 && days <= 3) durationText = " 1 วัน";
+                else durationText = ` ${days} วัน`;
+            }
 
             return {
                 name: (apps[baseApp] ? apps[baseApp].name : platform.toUpperCase()) + durationText,
@@ -161,8 +170,8 @@
             const initial = username.charAt(0).toUpperCase();
 
             data.forEach((item, index) => {
-                // ส่ง item.duration_days ไปแทน
-                const appInfo = getAppInfo(item.platform, item.duration_days);
+                // ส่ง created_at และ expire_date เข้าไปคำนวณเหมือนเดิม
+                const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
                 const dateStr = formatThaiDate(item.created_at);
                 const refId = item.id ? String(item.id).substring(0, 8) : '000' + index;
                 
@@ -198,8 +207,7 @@
             const item = historyData[index];
             if (!item) return;
 
-            // ส่ง item.duration_days ไปแทน
-            const appInfo = getAppInfo(item.platform, item.duration_days);
+            const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
             const displayName = appInfo.name;
             
             let displayExpire = item.expire_date || '-';
@@ -293,8 +301,7 @@
             const item = historyData[activeItemIndex];
             if (!item) return;
 
-            // ส่ง item.duration_days ไปแทน
-            const appInfo = getAppInfo(item.platform, item.duration_days);
+            const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
             const displayName = appInfo.name;
             
             let displayExpire = item.expire_date || '-';
