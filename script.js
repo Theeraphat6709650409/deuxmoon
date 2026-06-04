@@ -19,7 +19,7 @@ function showAlert(icon, title, text) {
 
 const appList = [
     { id: 'netflix', name: 'NETFLIX', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
-    { id: 'youtube', name: 'YouTube Premium', img: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/YouTube_Premium_logo.svg' },
+    { id: 'youtube', name: 'YouTube Premium', img: 'https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg' },
     { id: 'disney', name: 'DISNEY+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
     { id: 'prime', name: 'Prime Video', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_Prime_Video_logo.svg' },
     { id: 'iqiyi', name: 'iQIYI', img: 'https://play-lh.googleusercontent.com/L40FnQ8nF8zRtUdALz9b23JirsxYA5-0_fkRUlFBMymud09ctBCFrNui4l-ES_V6Uw=w1024' },
