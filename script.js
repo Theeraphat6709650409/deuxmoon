@@ -487,7 +487,7 @@ async function buyProduct(platform, duration_days, basePrice, displayName, hasWa
                     <strong style="color: #00a8e1; font-size: 14px;">✨ วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง)</strong><br><br>
                     <b>ขั้นตอนที่ 1:</b> นำ <b>เบอร์โทรศัพท์</b> (จากช่องล็อกอินด้านบน) ไปกรอกในแอปหรือเว็บ Disney+ เพื่อส่งคำขอรับรหัส OTP<br><br>
                     <b>ขั้นตอนที่ 2:</b> เข้าไปที่ <a href="https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec?authuser=0" target="_blank" style="color:#ffb74d; text-decoration:underline; font-weight:bold;">เว็บดึงรหัส OTP (คลิกลิงก์นี้)</a> 
-                    แล้วนำ <b>อีเมล</b> (ในช่องรหัสผ่าน) และ <b>รหัส PIN</b> ไปกรอกเพื่อดึงรหัส<br><br>
+                    แล้วนำ <b>อีเมล</b> (ในช่องรหัสผ่าน) และ <b>รหัส PIN(ในช่องรหัสเข้าจอ)</b> ไปกรอกเพื่อดึงรหัส<br><br>
                     <b>ขั้นตอนที่ 3:</b> นำรหัส OTP 4 หลักที่ได้จากหน้าเว็บ กลับไปกรอกในแอป Disney+ เพื่อเริ่มรับชมได้เลยครับ 🍿🎉
                 </div>
                 `;
