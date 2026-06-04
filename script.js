@@ -478,7 +478,23 @@ async function buyProduct(platform, duration_days, basePrice, displayName, hasWa
             if (data.account_password || data.password) receiptHtml += `<div>รหัสผ่าน: <span>${data.account_password || data.password}</span></div>`;
             receiptHtml += `<div>เข้าใช้งานจอ: <span>${data.profile_name || data.profile || '-'}</span></div>`;
             if (data.pin_code || data.pin) receiptHtml += `<div>รหัสเข้าจอ (PIN): <span>${data.pin_code || data.pin}</span></div>`;
-            receiptHtml += `<div>วันหมดอายุ: <span>${displayExpire}</span></div>
+            receiptHtml += `<div>วันหมดอายุ: <span>${displayExpire}</span></div>`;
+
+            // --- เพิ่มคำแนะนำเฉพาะ DISNEY+ ---
+            if (platform.includes('disney')) {
+                receiptHtml += `
+                <div style="margin-top: 15px; padding: 15px; background: rgba(0, 168, 225, 0.1); border-left: 4px solid #00a8e1; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #d6ebff;">
+                    <strong style="color: #00a8e1; font-size: 14px;">✨ วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง)</strong><br><br>
+                    <b>ขั้นตอนที่ 1:</b> นำ <b>เบอร์โทรศัพท์</b> (จากช่องล็อกอินด้านบน) ไปกรอกในแอปหรือเว็บ Disney+ เพื่อส่งคำขอรับรหัส OTP<br><br>
+                    <b>ขั้นตอนที่ 2:</b> เข้าไปที่ <a href="https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec?authuser=0" target="_blank" style="color:#ffb74d; text-decoration:underline; font-weight:bold;">เว็บดึงรหัส OTP (คลิกลิงก์นี้)</a> 
+                    แล้วนำ <b>อีเมล</b> (ในช่องรหัสผ่าน) และ <b>รหัส PIN</b> ไปกรอกเพื่อดึงรหัส<br><br>
+                    <b>ขั้นตอนที่ 3:</b> นำรหัส OTP 6 หลักที่ได้จากหน้าเว็บ กลับไปกรอกในแอป Disney+ เพื่อเริ่มรับชมได้เลยครับ 🍿🎉
+                </div>
+                `;
+            }
+
+            // --- กฎการใช้งานเดิม ---
+            receiptHtml += `
                 <div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">
                     <strong style="color: #ff8080;">กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.-</strong><br><br>
                     - ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที<br>

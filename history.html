@@ -237,6 +237,19 @@
             if (item.pin_code) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสเข้าจอ (PIN):</span> <strong style="color:#ffb74d;">${item.pin_code}</strong></div>`;
             receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">วันหมดอายุ:</span> <strong style="color:#ff4d4d;">${displayExpire}</strong></div>`;
 
+            // --- เพิ่มคำแนะนำเฉพาะ DISNEY+ ในหน้าประวัติ ---
+            if (item.platform.includes('disney')) {
+                receiptHtml += `
+                <div style="margin-top: 15px; margin-bottom: 15px; padding: 15px; background: rgba(0, 168, 225, 0.1); border-left: 4px solid #00a8e1; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #d6ebff;">
+                    <strong style="color: #00a8e1; font-size: 14px;">✨ วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง)</strong><br><br>
+                    <b>ขั้นตอนที่ 1:</b> นำ <b>เบอร์โทรศัพท์</b> (จากช่องล็อกอินด้านบน) ไปกรอกในแอปหรือเว็บ Disney+ เพื่อส่งคำขอรับรหัส OTP<br><br>
+                    <b>ขั้นตอนที่ 2:</b> เข้าไปที่ <a href="https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec?authuser=0" target="_blank" style="color:#ffb74d; text-decoration:underline; font-weight:bold;">เว็บดึงรหัส OTP (คลิกลิงก์นี้)</a> 
+                    แล้วนำ <b>อีเมล</b> (ในช่องรหัสผ่าน) และ <b>รหัส PIN</b> ไปกรอกเพื่อดึงรหัส<br><br>
+                    <b>ขั้นตอนที่ 3:</b> นำรหัส OTP 6 หลักที่ได้จากหน้าเว็บ กลับไปกรอกในแอป Disney+ เพื่อเริ่มรับชมได้เลยครับ 🍿🎉
+                </div>
+                `;
+            }
+
             let buttonsHtml = '';
             if (item.has_warranty) {
                 const contactLink = "https://lin.ee/9DAHkG0"; 
@@ -329,6 +342,15 @@
             if (item.pin_code) textOutput += `รหัสเข้าจอ (PIN): ${item.pin_code}\n`;
             textOutput += `Expire: ${displayExpire}\n\n`;
             
+            // --- แนบข้อมูลวิธีเข้าสู่ระบบเมื่อคัดลอกข้อความ ---
+            if (item.platform.includes('disney')) {
+                textOutput += `✨ วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง) ✨\n`;
+                textOutput += `1. นำ "เบอร์โทรศัพท์" (ในช่องล็อกอิน) ไปกรอกในแอป Disney+ เพื่อขอรับ OTP\n`;
+                textOutput += `2. เข้าไปที่เว็บดึงรหัส: https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec\n`;
+                textOutput += `   (นำ "อีเมล" ในช่องรหัสผ่าน และ "รหัส PIN" ไปกรอกเพื่อดึงรหัส)\n`;
+                textOutput += `3. นำรหัส OTP 6 หลักที่ได้จากเว็บ กลับไปกรอกใน Disney+ เพื่อเริ่มรับชมได้เลยครับ 🍿🎉\n\n`;
+            }
+
             textOutput += `📓กฎการใช้งานร่วมกัน ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ ผิดกฎปรับ 500.- 🥺🥓\n \n ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที\n ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด\n ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น\n 1 จอ = รับชมทีละ 1 อุปกรณ์\n ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี📺❌\n หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่นหากพบเจอขออนุญาตทำการยึดจอ ไม่คืนเงิน\n \n =- ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด`;
 
             executeCopy(textOutput);
