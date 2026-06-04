@@ -263,7 +263,7 @@ function handleAppClick(appId, appName) {
                     <div class="product-name">แพ็กเกจ ปกติ</div>
                 </div>
                 <div class="product-card" style="cursor:pointer;" onclick="renderPackages('monomax_sport', 'Mono Max (ดูบอล)')">
-                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://monomaxsports.tv/app/uploads/2026/05/KV-MONOMAX-SPORT_0-717x1024.jpg" alt="Mono Max"></div>
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://www.brandbuffet.in.th/wp-content/uploads/2026/06/KV-MONOMAX-SPORT-cover.jpg" alt="Mono Max"></div>
                     <div class="product-name">แพ็กเกจ ดูบอล</div>
                 </div>
             </div>
