@@ -118,18 +118,18 @@
                 'monomax': { name: 'Mono Max', logo: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
                 'trueid': { name: 'TrueID+', logo: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
                 'chatgpt': { name: 'ChatGPT+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' },
-                'youtube': { name: 'YouTube Premium', logo: 'https://th.wikipedia.org/wiki/%E0%B9%84%E0%B8%9F%E0%B8%A5%E0%B9%8C:YouTube_Premium_logo.svg' }
+                'youtube': { name: 'YouTube Premium', logo: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/YouTube_Premium_logo.svg' }
             };
 
             let baseApp = platform;
             let subText = "แพ็กเกจมาตรฐาน";
+            if (baseApp === 'hbo') subText = 'Ultimate';
 
             if (platform.includes('_')) {
                 const parts = platform.split('_');
                 baseApp = parts[0];
                 const type = parts[1];
                 
-                if (baseApp === 'hbo') subText = 'Ultimate';
                 if (type === 'mobile') subText = 'จอส่วนตัว (มือถือ)';
                 else if (type === 'tv') subText = 'จอส่วนตัว (ทีวี)';
                 else if (type === 'private') subText = 'บัญชีส่วนตัว';
