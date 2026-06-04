@@ -17,7 +17,6 @@ function showAlert(icon, title, text) {
     });
 }
 
-// แทนที่ตัวแปร appList เดิมด้วยชุดข้อมูลที่มีลิงก์โลโก้จริง (เพิ่ม Youtube เข้ามาแล้ว)
 const appList = [
     { id: 'netflix', name: 'NETFLIX', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
     { id: 'disney', name: 'DISNEY+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
@@ -37,7 +36,6 @@ const appList = [
     { id: 'youtube', name: 'YouTube Premium', img: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/YouTube_Premium_logo.svg' }
 ];
 
-// --- การตั้งค่าแพ็กเกจ (เพิ่มแพ็กเกจใหม่ให้ครบถ้วน) ---
 const packages = {
     'netflix_mobile': [
         { p: 'netflix_mobile', d: 1, label: 'มือถือ - 1 วัน' },
@@ -54,11 +52,13 @@ const packages = {
         { p: 'disney', d: 7, label: '7 วัน' },
         { p: 'disney', d: 30, label: '30 วัน' }
     ],
-    'iqiyi': [
+    'iqiyi_standard': [
         { p: 'iqiyi_private', d: 30, label: 'บัญชีส่วนตัว' },
         { p: 'iqiyi_share2', d: 30, label: '30 วัน (หาร 2)' },
         { p: 'iqiyi_share3', d: 30, label: '30 วัน (หาร 3)' },
-        { p: 'iqiyi_share4', d: 30, label: '30 วัน (หาร 4)' },
+        { p: 'iqiyi_share4', d: 30, label: '30 วัน (หาร 4)' }
+    ],
+    'iqiyi_premium': [
         { p: 'iqiyi_premprivate', d: 20, label: 'Premium 20 วัน (ส่วนตัว)' },
         { p: 'iqiyi_premprivate', d: 30, label: 'Premium 30 วัน (ส่วนตัว)' },
         { p: 'iqiyi_premshare4', d: 30, label: 'Premium 30 วัน (หาร 4)' }
@@ -104,9 +104,11 @@ const packages = {
         { p: 'canva', d: 7, label: '7 วัน' },
         { p: 'canva', d: 30, label: '30 วัน' }
     ],
-    'monomax': [
+    'monomax_standard': [
         { p: 'monomax', d: 7, label: '7 วัน' },
-        { p: 'monomax', d: 30, label: '30 วัน' },
+        { p: 'monomax', d: 30, label: '30 วัน' }
+    ],
+    'monomax_sport': [
         { p: 'monomax_sport', d: 7, label: 'ดูบอล 7 วัน' },
         { p: 'monomax_sport', d: 30, label: 'ดูบอล 30 วัน' }
     ],
@@ -188,11 +190,9 @@ function initStore() {
     const grid = document.getElementById('app-grid');
     grid.innerHTML = '';
     appList.forEach(app => {
-        // ค้นหาและนับจำนวนสินค้าในสต็อกที่มี platform ขึ้นต้นด้วย id ของแอปนั้นๆ
-        const availableItems = globalStock.filter(item => item.platform.startsWith(app.id));
+        const availableItems = globalStock.filter(item => item.platform.trim().startsWith(app.id));
         const count = availableItems.length;
         
-        // สร้างป้ายกำกับสต็อก
         let stockHtml = count > 0 
             ? `<div style="font-size: 11px; margin-top: 8px; color: #00dc5a; background: rgba(0, 220, 90, 0.1); border: 1px solid rgba(0, 220, 90, 0.3); padding: 3px 10px; border-radius: 12px; display: inline-block;">พร้อมส่ง ${count} รายการ</div>`
             : `<div style="font-size: 11px; margin-top: 8px; color: #ff4d4d; background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); padding: 3px 10px; border-radius: 12px; display: inline-block;">สินค้าหมด</div>`;
@@ -220,21 +220,57 @@ function handleAppClick(appId, appName) {
     const container = document.getElementById('package-container');
     container.innerHTML = '';
 
+    const appObj = appList.find(a => a.id === appId);
+    const appImg = appObj ? appObj.img : '';
+
     if (appId === 'netflix') {
         container.innerHTML = `
             <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                 <div class="product-card" style="cursor:pointer;" onclick="renderPackages('netflix_mobile', 'NETFLIX (มือถือ)')">
-                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg" alt="Netflix"></div>
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="${appImg}" alt="Netflix"></div>
                     <div class="product-name">เลือกแพ็กเกจ มือถือ</div>
                 </div>
                 <div class="product-card" style="cursor:pointer;" onclick="renderPackages('netflix_tv', 'NETFLIX (ทีวี)')">
-                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg" alt="Netflix"></div>
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="${appImg}" alt="Netflix"></div>
                     <div class="product-name">เลือกแพ็กเกจ ทีวี</div>
                 </div>
             </div>
         `;
         return;
     }
+
+    if (appId === 'iqiyi') {
+        container.innerHTML = `
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <div class="product-card" style="cursor:pointer;" onclick="renderPackages('iqiyi_standard', 'iQIYI (มาตรฐาน)')">
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="${appImg}" alt="iQIYI"></div>
+                    <div class="product-name">แพ็กเกจ มาตรฐาน</div>
+                </div>
+                <div class="product-card" style="cursor:pointer;" onclick="renderPackages('iqiyi_premium', 'iQIYI (Premium)')">
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="${appImg}" alt="iQIYI"></div>
+                    <div class="product-name">แพ็กเกจ Premium</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    if (appId === 'monomax') {
+        container.innerHTML = `
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <div class="product-card" style="cursor:pointer;" onclick="renderPackages('monomax_standard', 'Mono Max (ปกติ)')">
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="${appImg}" alt="Mono Max"></div>
+                    <div class="product-name">แพ็กเกจ ปกติ</div>
+                </div>
+                <div class="product-card" style="cursor:pointer;" onclick="renderPackages('monomax_sport', 'Mono Max (ดูบอล)')">
+                    <div class="app-icon" style="margin: 0 auto 15px;"><img src="https://monomaxsports.tv/app/uploads/2026/05/KV-MONOMAX-SPORT_0-717x1024.jpg" alt="Mono Max"></div>
+                    <div class="product-name">แพ็กเกจ ดูบอล</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
     renderPackages(appId, appName);
 }
 
@@ -272,7 +308,7 @@ function renderPackages(configId, title) {
     }
 
     packList.forEach(pack => {
-        const availableItems = globalStock.filter(item => item.platform === pack.p && parseInt(item.duration_days) === pack.d);
+        const availableItems = globalStock.filter(item => item.platform.trim() === pack.p && parseInt(item.duration_days) === pack.d);
         const count = availableItems.length;
         
         let basePrice = 0;
@@ -291,7 +327,6 @@ function renderPackages(configId, title) {
             }
         }
 
-        // --- ระบบสร้างกล่องประกันเคลมแยกเรทแม่ค้า ---
         let isNetflix = pack.p.startsWith('netflix');
         let warrantyHtml = '';
         let warrantyAddon = 0;
@@ -335,7 +370,6 @@ function renderPackages(configId, title) {
                 `;
             }
         }
-        // ------------------------------------
 
         let priceHtml = '';
         if (isReseller && originalPrice > basePrice) {
@@ -543,11 +577,9 @@ async function checkLoginStatus() {
     const token = localStorage.getItem('token');
     
     if (userStr && token) {
-        // 1. แสดงข้อมูลเก่าไปก่อน เพื่อให้หน้าเว็บโหลดไว ไม่มีจังหวะกระตุก
         let user = JSON.parse(userStr);
         renderUserMenu(user);
         
-        // 2. แอบดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์เบื้องหลัง (Auto-Sync)
         try {
             const response = await fetch(`${API_URL}/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -555,12 +587,11 @@ async function checkLoginStatus() {
             const result = await response.json();
             
             if (result.status === 'success') {
-                // หากแอดมินปรับเครดิต หรืออัปเกรดเป็น Reseller แล้ว ให้อัปเดตข้อมูลทับของเดิมทันที
                 user = result.data;
                 localStorage.setItem('user', JSON.stringify(user));
                 renderUserMenu(user);
             } else if (result.message === 'เซสชันหมดอายุ กรุณาล็อกอินใหม่') {
-                logout(); // ถ้ารหัสผ่านถูกเปลี่ยน หรือหมดอายุ ให้เด้งออกจากระบบอัตโนมัติ
+                logout(); 
             }
         } catch (e) {
             console.log("ใช้งานออฟไลน์ หรือเซิร์ฟเวอร์ตอบสนองช้า");
@@ -571,7 +602,6 @@ async function checkLoginStatus() {
     }
 }
 
-// แยกฟังก์ชันสำหรับวาด UI เมนูออกมา เพื่อให้เรียกใช้ซ้ำได้
 function renderUserMenu(user) {
     document.getElementById('menu-guest').style.display = 'none';
     document.getElementById('menu-logged-in').style.display = 'flex';
