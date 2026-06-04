@@ -99,7 +99,7 @@
             return `${d} ${m} ${y} เวลา ${time} น.`;
         }
 
-        // --- กลับมาใช้ created_at และ expire_date แต่แก้สูตรคำนวณให้แม่นยำ ---
+       // --- กลับมาใช้ created_at และ expire_date แต่แก้สูตรคำนวณให้แม่นยำ ---
         function getAppInfo(platform, created_at, expire_date) {
             platform = platform || 'unknown'; 
             const apps = {
@@ -117,7 +117,8 @@
                 'canva': { name: 'Canva', logo: 'https://www.edigitalagency.com.au/wp-content/uploads/Canva-logo-PNG-large-size.png' },
                 'monomax': { name: 'Mono Max', logo: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
                 'trueid': { name: 'TrueID+', logo: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
-                'chatgpt': { name: 'ChatGPT+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' }
+                'chatgpt': { name: 'ChatGPT+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' },
+                'youtube': { name: 'YouTube Premium', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1024px-YouTube_full-color_icon_%282017%29.svg.png' }
             };
 
             let baseApp = platform;
@@ -128,6 +129,7 @@
                 baseApp = parts[0];
                 const type = parts[1];
                 
+                if (baseApp === 'hbo') subText = 'Ultimate'
                 if (type === 'mobile') subText = 'จอส่วนตัว (มือถือ)';
                 else if (type === 'tv') subText = 'จอส่วนตัว (ทีวี)';
                 else if (type === 'private') subText = 'บัญชีส่วนตัว';
@@ -137,6 +139,11 @@
                 else if (type === 'share5') subText = 'หาร 5';
                 else if (type === 'renew') subText = 'ต่อเมลเดิม';
                 else if (type === 'store') subText = 'เมลร้าน (ไม่ต่ออายุ)';
+                // --- เพิ่มคำแปลของแพ็กเกจใหม่ ---
+                else if (type === 'customer') subText = 'เมลลูกค้า (ไม่ต่ออายุ)';
+                else if (type === 'premprivate') subText = 'Premium (บัญชีส่วนตัว)';
+                else if (type === 'premshare4') subText = 'Premium (หาร 4)';
+                else if (type === 'sport') subText = 'แพ็กเกจดูบอล';
             }
 
             let durationText = "";

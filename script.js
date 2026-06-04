@@ -17,7 +17,7 @@ function showAlert(icon, title, text) {
     });
 }
 
-// แทนที่ตัวแปร appList เดิมด้วยชุดข้อมูลที่มีลิงก์โลโก้จริง
+// แทนที่ตัวแปร appList เดิมด้วยชุดข้อมูลที่มีลิงก์โลโก้จริง (เพิ่ม Youtube เข้ามาแล้ว)
 const appList = [
     { id: 'netflix', name: 'NETFLIX', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
     { id: 'disney', name: 'DISNEY+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
@@ -33,10 +33,11 @@ const appList = [
     { id: 'canva', name: 'Canva', img: 'https://www.edigitalagency.com.au/wp-content/uploads/Canva-logo-PNG-large-size.png' },
     { id: 'monomax', name: 'Mono Max', img: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
     { id: 'trueid', name: 'TrueID+', img: 'https://cms.dmpcdn.com/misc/2022/02/09/af7de880-89ab-11ec-8c0c-590a22d85d91_webp_original.webp' },
-    { id: 'chatgpt', name: 'ChatGPT+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' }
+    { id: 'chatgpt', name: 'ChatGPT+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' },
+    { id: 'youtube', name: 'YouTube Premium', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1024px-YouTube_full-color_icon_%282017%29.svg.png' }
 ];
 
-// --- การตั้งค่าแพ็กเกจ (จับคู่ platform ในฐานข้อมูล และ duration) ---
+// --- การตั้งค่าแพ็กเกจ (เพิ่มแพ็กเกจใหม่ให้ครบถ้วน) ---
 const packages = {
     'netflix_mobile': [
         { p: 'netflix_mobile', d: 1, label: 'มือถือ - 1 วัน' },
@@ -57,7 +58,10 @@ const packages = {
         { p: 'iqiyi_private', d: 30, label: 'บัญชีส่วนตัว' },
         { p: 'iqiyi_share2', d: 30, label: '30 วัน (หาร 2)' },
         { p: 'iqiyi_share3', d: 30, label: '30 วัน (หาร 3)' },
-        { p: 'iqiyi_share4', d: 30, label: '30 วัน (หาร 4)' }
+        { p: 'iqiyi_share4', d: 30, label: '30 วัน (หาร 4)' },
+        { p: 'iqiyi_premprivate', d: 20, label: 'Premium 20 วัน (ส่วนตัว)' },
+        { p: 'iqiyi_premprivate', d: 30, label: 'Premium 30 วัน (ส่วนตัว)' },
+        { p: 'iqiyi_premshare4', d: 30, label: 'Premium 30 วัน (หาร 4)' }
     ],
     'wetv': [
         { p: 'wetv_private', d: 30, label: 'บัญชีส่วนตัว' },
@@ -102,7 +106,9 @@ const packages = {
     ],
     'monomax': [
         { p: 'monomax', d: 7, label: '7 วัน' },
-        { p: 'monomax', d: 30, label: '30 วัน' }
+        { p: 'monomax', d: 30, label: '30 วัน' },
+        { p: 'monomax_sport', d: 7, label: 'ดูบอล 7 วัน' },
+        { p: 'monomax_sport', d: 30, label: 'ดูบอล 30 วัน' }
     ],
     'trueid': [
         { p: 'trueid', d: 30, label: '30 วัน' }
@@ -110,6 +116,10 @@ const packages = {
     'chatgpt': [
         { p: 'chatgpt_private', d: 30, label: '30 วัน (ส่วนตัว)' },
         { p: 'chatgpt_share4', d: 30, label: '30 วัน (หาร 4)' }
+    ],
+    'youtube': [
+        { p: 'youtube_customer', d: 30, label: '30 วัน (เมลลูกค้า)' },
+        { p: 'youtube_store', d: 30, label: '30 วัน (เมลร้าน)' }
     ]
 };
 
