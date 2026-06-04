@@ -19,21 +19,22 @@ function showAlert(icon, title, text) {
 
 const appList = [
     { id: 'netflix', name: 'NETFLIX', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
+    { id: 'youtube', name: 'YouTube Premium', img: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/YouTube_Premium_logo.svg' },
     { id: 'disney', name: 'DISNEY+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Disney%2B_logo.svg' },
+    { id: 'prime', name: 'Prime Video', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_Prime_Video_logo.svg' },
     { id: 'iqiyi', name: 'iQIYI', img: 'https://play-lh.googleusercontent.com/L40FnQ8nF8zRtUdALz9b23JirsxYA5-0_fkRUlFBMymud09ctBCFrNui4l-ES_V6Uw=w1024' },
     { id: 'wetv', name: 'WeTV', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/WeTV_logo.svg' },
     { id: 'viu', name: 'Viu', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Viu_logo.svg' },
-    { id: 'prime', name: 'Prime Video', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_Prime_Video_logo.svg' },
+    { id: 'monomax', name: 'Mono Max', img: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
     { id: 'hbo', name: 'HBO Max', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Max_logo.svg' },
+    { id: 'trueid', name: 'TrueID+', img: 'https://cms.dmpcdn.com/misc/2022/02/09/af7de880-89ab-11ec-8c0c-590a22d85d91_webp_original.webp' },
+    { id: 'bilibili', name: 'Bilibili', img: 'https://img.icons8.com/color/1200/bilibili.jpg' },
     { id: 'oned', name: 'OneD', img: 'https://www.ais.th/content/ais/th/th_th/consumers/entertainment/streaming-app/one-d/_jcr_content/root/container_1816311984/aiscontainer/columncontrol_copy_c/content1/image.coreimg.png/1742182598629/logo-oned-b.png' },
     { id: 'ch3', name: 'Ch3 Plus', img: 'https://assets.ch3plus.com/ch3plus_logo.png' },
-    { id: 'bilibili', name: 'Bilibili', img: 'https://img.icons8.com/color/1200/bilibili.jpg' },
     { id: 'spotify', name: 'Spotify', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Spotify_icon.svg/1280px-Spotify_icon.svg.png' },
     { id: 'canva', name: 'Canva', img: 'https://www.edigitalagency.com.au/wp-content/uploads/Canva-logo-PNG-large-size.png' },
-    { id: 'monomax', name: 'Mono Max', img: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
-    { id: 'trueid', name: 'TrueID+', img: 'https://cms.dmpcdn.com/misc/2022/02/09/af7de880-89ab-11ec-8c0c-590a22d85d91_webp_original.webp' },
-    { id: 'chatgpt', name: 'ChatGPT+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' },
-    { id: 'youtube', name: 'YouTube Premium', img: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/YouTube_Premium_logo.svg' }
+    { id: 'chatgpt', name: 'ChatGPT+', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' }
+    
 ];
 
 const packages = {
