@@ -4,7 +4,7 @@ import os
 import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-from datetime import datetime, timedelta
+import datetime
 from functools import wraps
 
 app = Flask(__name__)
@@ -300,7 +300,7 @@ def reset_password():
 
 @app.route('/api/cron/check-expire', methods=['GET'])
 def check_expire():
-    import time 
+    import time # นำเข้า module time สำหรับระบบหน่วงเวลา
     cron_key = request.args.get('key')
     expected_key = os.environ.get("CRON_SECRET", "")
     if not cron_key or cron_key != expected_key: return jsonify({'error': 'Unauthorized'}), 401
@@ -349,27 +349,19 @@ def check_expire():
             except:
                 pass
         
-        # ระบบหั่นข้อความ Discord อัตโนมัติ (ใส่ try-except ป้องกันเซิร์ฟเวอร์ Discord ล่ม)
+        # --- ระบบ Retry ส่ง Discord ซ้ำหากเซิร์ฟเวอร์ปลายทางล่มหรือหน่วง ---
         if discord_webhook:
-            current_msg = ""
-            for msg in discord_messages:
-                # ถ้ารวมข้อความใหม่เข้าไปแล้วเกิน 1,900 ตัวอักษร ให้ส่งของเก่าออกไปก่อน
-                if len(current_msg) + len(msg) > 1900:
-                    try:
-                        requests.post(discord_webhook, json={'content': current_msg})
-                    except:
-                        pass
-                    current_msg = msg + "\n"
-                    time.sleep(1) # หน่วง 1 วินาที ป้องกันโดน Discord แบนว่าเป็นสแปม
-                else:
-                    current_msg += msg + "\n"
-            
-            # ส่งข้อความก้อนสุดท้ายที่เหลืออยู่
-            if current_msg:
+            max_retries = 3
+            for attempt in range(max_retries):
                 try:
-                    requests.post(discord_webhook, json={'content': current_msg})
-                except:
-                    pass
+                    discord_res = requests.post(discord_webhook, json={'content': "\n".join(discord_messages)})
+                    # ถ้าสถานะกลับมาเป็น 200 (OK) หรือ 204 (No Content) แปลว่าส่งสำเร็จ ให้ออกจากลูป
+                    if discord_res.status_code in [200, 204]:
+                        break 
+                    else:
+                        time.sleep(2) # หากไม่สำเร็จ รอ 2 วินาทีแล้วลองส่งใหม่
+                except Exception:
+                    time.sleep(2) # กรณีเซิร์ฟเวอร์ Discord ไม่ตอบสนองเลย ให้รอ 2 วินาทีแล้วลองใหม่
 
         return jsonify({'status': 'success', 'message': f'แจ้งเตือนและอัปเดตไป {len(expired_products)} บัญชี'})
     except Exception as e:
