@@ -300,7 +300,7 @@ def reset_password():
 
 @app.route('/api/cron/check-expire', methods=['GET'])
 def check_expire():
-    import time
+    import time 
     cron_key = request.args.get('key')
     expected_key = os.environ.get("CRON_SECRET", "")
     if not cron_key or cron_key != expected_key: return jsonify({'error': 'Unauthorized'}), 401
@@ -312,11 +312,9 @@ def check_expire():
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
 
     try:
-        # 1. แปลงเวลาเป็นไทย และดักจับให้ครอบคลุมถึงสิ้นวัน (23:59:59) เพื่อไม่ให้แพ็กเกจ 1 วันตกหล่น
         tz = datetime.timezone(datetime.timedelta(hours=7))
-        today_end = datetime.datetime.now(tz).strftime('%Y-%m-%d 23:59:59')
-        
-        get_url = f"{supabase_url}/rest/v1/products?status=eq.sold&expire_date=lte.{today_end}"
+        today = datetime.datetime.now(tz).strftime('%Y-%m-%d')
+        get_url = f"{supabase_url}/rest/v1/products?status=eq.sold&expire_date=lte.{today}"
         res = requests.get(get_url, headers=headers)
         res.raise_for_status()
         expired_products = res.json()
@@ -324,7 +322,7 @@ def check_expire():
         if not expired_products: return jsonify({'status': 'success', 'message': 'ไม่มีบัญชีหมดอายุในวันนี้'})
 
         line_messages = ["แจ้งเตือนบัญชีหมดอายุ! ถึงเวลารีเซ็ตแล้ว:"]
-        discord_messages = ["**[แจ้งเตือน] บัญชีหมดอายุ! ถึงเวลารีเซ็ตแล้ว:**\n"]
+        discord_messages = ["**[แจ้งเตือน] บัญชีหมดอายุ! ถึงเวลารีเซ็ตแล้ว:**"]
         
         for p in expired_products:
             platform_name = p.get('platform', '').upper()
@@ -336,10 +334,9 @@ def check_expire():
             line_msg = f"\nแพลตฟอร์ม: {platform_name}\nอีเมล: {login}\nรหัสผ่าน: {password}\nจอ: {profile}\nหมดอายุ: {expire}"
             line_messages.append(line_msg)
             
-            discord_msg = f"**{platform_name}**\n> **อีเมล:** `{login}`\n> **รหัสผ่าน:** `{password}`\n> **จอ:** `{profile}`\n> **หมดอายุ:** `{expire}`\n"
+            discord_msg = f"**{platform_name}**\n> **อีเมล:** `{login}`\n> **รหัสผ่าน:** `{password}`\n> **จอที่ใช้งาน:** `{profile}`\n> **หมดอายุ:** `{expire}`\n"
             discord_messages.append(discord_msg)
 
-            # อัปเดตสถานะใน Supabase ว่าถึงเวลารีเซ็ตแล้ว
             update_url = f"{supabase_url}/rest/v1/products?id=eq.{p['id']}"
             requests.patch(update_url, headers=headers, json={"status": "pending_reset"})
 
@@ -352,13 +349,16 @@ def check_expire():
             except:
                 pass
         
-        # 2. ระบบหั่นข้อความ Discord อัตโนมัติ (ป้องกัน Error เกิน 2,000 ตัวอักษร)
+        # ระบบหั่นข้อความ Discord อัตโนมัติ (ใส่ try-except ป้องกันเซิร์ฟเวอร์ Discord ล่ม)
         if discord_webhook:
             current_msg = ""
             for msg in discord_messages:
                 # ถ้ารวมข้อความใหม่เข้าไปแล้วเกิน 1,900 ตัวอักษร ให้ส่งของเก่าออกไปก่อน
                 if len(current_msg) + len(msg) > 1900:
-                    requests.post(discord_webhook, json={'content': current_msg})
+                    try:
+                        requests.post(discord_webhook, json={'content': current_msg})
+                    except:
+                        pass
                     current_msg = msg + "\n"
                     time.sleep(1) # หน่วง 1 วินาที ป้องกันโดน Discord แบนว่าเป็นสแปม
                 else:
@@ -366,7 +366,10 @@ def check_expire():
             
             # ส่งข้อความก้อนสุดท้ายที่เหลืออยู่
             if current_msg:
-                requests.post(discord_webhook, json={'content': current_msg})
+                try:
+                    requests.post(discord_webhook, json={'content': current_msg})
+                except:
+                    pass
 
         return jsonify({'status': 'success', 'message': f'แจ้งเตือนและอัปเดตไป {len(expired_products)} บัญชี'})
     except Exception as e:
