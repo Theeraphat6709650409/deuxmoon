@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
 </head>
 <body style="background-image: url('4F36D6F4-6C48-4405-BDF3-E06B9EDDAEDF.png'); background-size: cover; background-attachment: fixed; background-position: center; margin: 0; color: white; font-family: 'Prompt', sans-serif;">
 
@@ -19,6 +20,26 @@
     <div class="history-container">
         <button class="btn-back" onclick="window.location.href='index.html'" style="margin-bottom: 20px;">← กลับหน้าหลัก</button>
         <h2 class="section-title">ประวัติการสั่งซื้อของคุณ</h2>
+
+        <div id="filter-container" class="filter-container">
+            <button class="filter-btn active" onclick="setFilter('all')">ทั้งหมด</button>
+            <button class="filter-btn" onclick="setFilter('netflix')">Netflix</button>
+            <button class="filter-btn" onclick="setFilter('disney')">Disney+</button>
+            <button class="filter-btn" onclick="setFilter('iqiyi')">iQIYI</button>
+            <button class="filter-btn" onclick="setFilter('wetv')">WeTV</button>
+            <button class="filter-btn" onclick="setFilter('viu')">Viu</button>
+            <button class="filter-btn" onclick="setFilter('prime')">Prime Video</button>
+            <button class="filter-btn" onclick="setFilter('hbo')">HBO Max</button>
+            <button class="filter-btn" onclick="setFilter('oned')">OneD</button>
+            <button class="filter-btn" onclick="setFilter('ch3')">Ch3 Plus</button>
+            <button class="filter-btn" onclick="setFilter('bilibili')">Bilibili</button>
+            <button class="filter-btn" onclick="setFilter('spotify')">Spotify</button>
+            <button class="filter-btn" onclick="setFilter('canva')">Canva</button>
+            <button class="filter-btn" onclick="setFilter('monomax')">Mono Max</button>
+            <button class="filter-btn" onclick="setFilter('trueid')">TrueID+</button>
+            <button class="filter-btn" onclick="setFilter('chatgpt')">ChatGPT+</button>
+            <button class="filter-btn" onclick="setFilter('youtube')">YouTube Premium</button>
+        </div>
         
         <div id="history-list">
             <div style="text-align: center; padding: 20px; color: #888;">กำลังโหลดข้อมูล...</div>
@@ -33,8 +54,7 @@
             </div>
 
             <div id="details-buttons" style="margin-top: 20px; text-align: center;">
-                <!-- ปุ่มจะถูกแทรกเข้ามาตรงนี้อัตโนมัติ -->
-            </div>
+                </div>
 
             <button onclick="closeDetails()" style="margin-top: 20px; background: #333; color: white; border: 1px solid #555; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-size: 15px;">ปิดหน้าต่าง</button>
         </div>
@@ -44,6 +64,11 @@
         const API_URL = "https://deuxmoon-api.onrender.com";
         let historyData = [];
         let activeItemIndex = null; 
+
+        // --- เพิ่มตัวแปรสำหรับ Pagination และ Filter ---
+        let currentPage = 1;
+        const itemsPerPage = 6;
+        let currentFilter = 'all';
 
         function showToast(icon, title) {
             Swal.fire({
@@ -99,7 +124,6 @@
             return `${d} ${m} ${y} เวลา ${time} น.`;
         }
 
-       // --- กลับมาใช้ created_at และ expire_date แต่แก้สูตรคำนวณให้แม่นยำ ---
         function getAppInfo(platform, created_at, expire_date) {
             platform = platform || 'unknown'; 
             const apps = {
@@ -118,7 +142,7 @@
                 'monomax': { name: 'Mono Max', logo: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
                 'trueid': { name: 'TrueID+', logo: 'https://img.monomax.me/9RN09HpT5JJlM0gDpIB3EUYJFgg=/www.monomax.me/assets/monomax/images/maxplay/logo-monomax-sm.png' },
                 'chatgpt': { name: 'ChatGPT+', logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/ChatGPT_logo.svg' },
-                'youtube': { name: 'YouTube Premium', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg' }
+                'youtube': { name: 'YouTube Premium', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1024px-YouTube_full-color_icon_%282017%29.svg.png' }
             };
 
             let baseApp = platform;
@@ -139,7 +163,6 @@
                 else if (type === 'share5') subText = 'หาร 5';
                 else if (type === 'renew') subText = 'ต่อเมลเดิม';
                 else if (type === 'store') subText = 'เมลร้าน (ไม่ต่ออายุ)';
-                // --- เพิ่มคำแปลของแพ็กเกจใหม่ ---
                 else if (type === 'customer') subText = 'เมลลูกค้า (ไม่ต่ออายุ)';
                 else if (type === 'premprivate') subText = 'Premium (บัญชีส่วนตัว)';
                 else if (type === 'premshare4') subText = 'Premium (หาร 4)';
@@ -148,10 +171,7 @@
 
             let durationText = "";
             if (created_at && expire_date) {
-                // เปลี่ยนมาใช้ Math.ceil ปัดเศษขึ้นเสมอ
                 let days = Math.ceil((new Date(expire_date) - new Date(created_at)) / (1000 * 60 * 60 * 24));
-                
-                // บังคับตบเข้าเลข 7 และ 30 เพื่อป้องกันเศษชั่วโมง
                 if (days >= 25) durationText = " 30 วัน";
                 else if (days >= 4 && days <= 10) durationText = " 7 วัน";
                 else if (days >= 1 && days <= 3) durationText = " 1 วัน";
@@ -165,22 +185,65 @@
             };
         }
 
+        // --- ฟังก์ชันจัดการ Filter ---
+        function setFilter(platform) {
+            currentFilter = platform;
+            currentPage = 1; 
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('onclick').includes(`'${platform}'`)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            const userStr = localStorage.getItem('user');
+            if(userStr) {
+                const userEmail = JSON.parse(userStr).email.split('@')[0];
+                renderHistory(historyData, userEmail);
+            }
+        }
+
+        // --- ฟังก์ชันเปลี่ยนหน้า (Pagination) ---
+        function changePage(page) {
+            currentPage = page;
+            const userStr = localStorage.getItem('user');
+            if(userStr) {
+                const userEmail = JSON.parse(userStr).email.split('@')[0];
+                renderHistory(historyData, userEmail);
+                window.scrollTo({ top: document.querySelector('.history-container').offsetTop - 20, behavior: 'smooth' });
+            }
+        }
+
         function renderHistory(data, username) {
             const listDiv = document.getElementById('history-list');
             listDiv.innerHTML = '';
 
-            if (data.length === 0) {
-                listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #888; background: var(--dark-glass); border-radius: 12px;">ยังไม่มีประวัติการสั่งซื้อครับ</div>';
+            // 1. คัดกรองข้อมูลตามหมวดหมู่ (Filter)
+            let filteredData = data;
+            if (currentFilter !== 'all') {
+                filteredData = data.filter(item => item.platform.startsWith(currentFilter));
+            }
+
+            if (filteredData.length === 0) {
+                listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #888; background: rgba(28, 12, 50, 0.55); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">ไม่พบประวัติการสั่งซื้อในหมวดหมู่นี้ครับ</div>';
                 return;
             }
 
+            // 2. ตัดแบ่งข้อมูลให้เหลือ 6 รายการต่อหน้า
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const currentData = filteredData.slice(startIndex, endIndex);
+
             const initial = username.charAt(0).toUpperCase();
 
-            data.forEach((item, index) => {
-                // ส่ง created_at และ expire_date เข้าไปคำนวณเหมือนเดิม
+            // 3. วาดรายการประวัติ
+            currentData.forEach((item) => {
+                const originalIndex = historyData.indexOf(item); 
                 const appInfo = getAppInfo(item.platform, item.created_at, item.expire_date);
                 const dateStr = formatThaiDate(item.created_at);
-                const refId = item.id ? String(item.id).substring(0, 8) : '000' + index;
+                const refId = item.id ? String(item.id).substring(0, 8) : '000' + originalIndex;
                 
                 const warrantyBadge = item.has_warranty ? `<span style="color: #111; background: #00dc5a; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; vertical-align: middle;">มีประกัน</span>` : '';
 
@@ -199,7 +262,7 @@
                                 <div class="history-title">${appInfo.name} ${warrantyBadge}</div>
                                 <div class="history-sub">${appInfo.subText}</div>
                             </div>
-                            <button class="btn-view-details" onclick="viewDetails(${index})">👁 ดูข้อมูล</button>
+                            <button class="btn-view-details" onclick="viewDetails(${originalIndex})">👁 ดูข้อมูล</button>
                         </div>
                         <div class="history-footer">
                             <span>🕒 ${dateStr}</span>
@@ -207,6 +270,20 @@
                     </div>
                 `;
             });
+
+            // 4. วาดปุ่มหมายเลขหน้า
+            if (totalPages > 1) {
+                let paginationHtml = '<div class="pagination">';
+                paginationHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">«</button>`;
+                
+                for (let i = 1; i <= totalPages; i++) {
+                    paginationHtml += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                }
+
+                paginationHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">»</button>`;
+                paginationHtml += '</div>';
+                listDiv.innerHTML += paginationHtml;
+            }
         }
 
         function viewDetails(index) {
@@ -237,7 +314,6 @@
             if (item.pin_code) receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">รหัสเข้าจอ (PIN):</span> <strong style="color:#ffb74d;">${item.pin_code}</strong></div>`;
             receiptHtml += `<div style="margin-bottom: 8px;"><span style="color:#888;">วันหมดอายุ:</span> <strong style="color:#ff4d4d;">${displayExpire}</strong></div>`;
 
-            // --- เพิ่มคำแนะนำเฉพาะ DISNEY+ ในหน้าประวัติ ---
             if (item.platform.includes('disney')) {
                 receiptHtml += `
                 <div style="margin-top: 15px; margin-bottom: 15px; padding: 15px; background: rgba(0, 168, 225, 0.1); border-left: 4px solid #00a8e1; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #d6ebff;">
@@ -342,7 +418,6 @@
             if (item.pin_code) textOutput += `รหัสเข้าจอ (PIN): ${item.pin_code}\n`;
             textOutput += `Expire: ${displayExpire}\n\n`;
             
-            // --- แนบข้อมูลวิธีเข้าสู่ระบบเมื่อคัดลอกข้อความ ---
             if (item.platform.includes('disney')) {
                 textOutput += `✨ วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง) ✨\n`;
                 textOutput += `1. นำ "เบอร์โทรศัพท์" (ในช่องล็อกอิน) ไปกรอกในแอป Disney+ เพื่อขอรับ OTP\n`;
@@ -350,7 +425,7 @@
                 textOutput += `   (นำ "อีเมล" ในช่องรหัสผ่าน และ "รหัส PIN(ในช่องรหัสเข้าจอ)" ไปกรอกเพื่อดึงรหัส)\n`;
                 textOutput += `3. นำรหัส OTP 4 หลักที่ได้จากเว็บ กลับไปกรอกใน Disney+ เพื่อเริ่มรับชมได้เลยครับ 🍿🎉\n\n`;
             }
-            // --- เรียกใช้ กฎการใช้งานอัตโนมัติ (Text Mode) ---
+            
             textOutput += getAppRules(item.platform, false);
     
             executeCopy(textOutput);
@@ -396,11 +471,11 @@
                 rulesHtml = `<strong style="color: #ff8080; font-size: 14px;">🌟 กฎการใช้งานร่วมกัน 🌟</strong><br><div style="text-align: center; margin-bottom: 8px; color: #ffd6d6;">📌 ลูกค้าที่น่ารักทำตามกฎกันด้วยนะคะ (ผิดกฎปรับ 500.-)</div>✨ ทำการ Log in เข้าสู่ระบบหลังจากได้รับรหัสทันที<br>✨ ไม่มั่ว/ ไม่เอาไปหาร / ไม่เปลี่ยนรหัสบัญชีโดยเด็ดขาด<br>✨ ไม่เข้าหรือแก้ไขโปรไฟล์คนอื่น<br>✨ 1 จอ = รับชมทีละ 1 อุปกรณ์<br>✨ ถ้าไม่ได้ซื้อแบบทีวี ห้ามรับชมบนทีวี<br>✨ หากพบเจอว่ามีการนำไปแชร์รหัสกับผู้อื่น ขออนุญาตทำการยึดจอ ไม่คืนเงิน<br><br><span style="color: #ffb74d; font-weight: bold;">⭐ ทางร้านขายจอส่วนตัวเท่านั้น ห้ามนำไปหารหรือแชร์ต่อโดยเด็ดขาด</span>`;
             }
 
-    if (isHtml) {
-        return `<div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">${rulesHtml}</div>`;
-    }
-    return rulesText;
-}       
+            if (isHtml) {
+                return `<div style="margin-top: 15px; padding: 15px; background: rgba(255, 99, 71, 0.1); border-left: 4px solid #ff4d4d; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: left; color: #ffd6d6;">${rulesHtml}</div>`;
+            }
+            return rulesText;
+        }       
 
         window.onload = loadHistory;
     </script>

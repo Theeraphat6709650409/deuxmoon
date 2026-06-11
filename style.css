@@ -578,6 +578,70 @@ input:focus {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--theme-orange); }
 
+/* CSS สำหรับปุ่ม Filter และ เปลี่ยนหน้า */
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .filter-container::-webkit-scrollbar { height: 4px; }
+        .filter-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        
+        .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #c8b9df;
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: 'Prompt', sans-serif;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .filter-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .filter-btn.active {
+            background: #ff9e2c;
+            border-color: #ff9e2c;
+            color: #111;
+            font-weight: bold;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 25px;
+        }
+        .page-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Prompt', sans-serif;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); border-color: #ff9e2c; }
+        .page-btn.active {
+            background: #ff9e2c;
+            color: #111;
+            font-weight: bold;
+            border-color: #ff9e2c;
+        }
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
 /* =========================================
    Responsive จัดหน้าตาสำหรับมือถือ
    ========================================= */
