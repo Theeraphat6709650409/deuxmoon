@@ -590,54 +590,70 @@ input:focus {
         .filter-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
         
         .filter-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #c8b9df;
+            background: rgba(0, 0, 0, 0.65); /* ทำให้พื้นหลังทึบขึ้นเป็นสีดำโปร่งใส */
+            backdrop-filter: blur(8px); /* เบลอภาพข้างหลังปุ่ม */
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25); /* ขอบปุ่มชัดขึ้น */
+            color: #ffffff; /* ตัวหนังสือสีขาวสว่าง */
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); /* เพิ่มเงาดำให้ตัวหนังสือลอยเด่นขึ้นมา */
             padding: 8px 18px;
             border-radius: 20px;
             cursor: pointer;
             white-space: nowrap;
             font-family: 'Prompt', sans-serif;
             font-size: 13px;
+            font-weight: 500;
             transition: all 0.3s ease;
         }
-        .filter-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .filter-btn:hover { 
+            background: rgba(0, 0, 0, 0.85); 
+            border-color: #ff9e2c; 
+        }
         .filter-btn.active {
             background: #ff9e2c;
             border-color: #ff9e2c;
             color: #111;
             font-weight: bold;
+            text-shadow: none; /* เอาเงาออกเวลากลายเป็นปุ่มสีส้ม */
         }
         
         .pagination {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap; /* เพิ่มคำสั่งนี้เพื่อให้ปุ่มปัดลงบรรทัดใหม่ */
+            flex-wrap: wrap;
             gap: 8px;
             margin-top: 25px;
             padding-bottom: 20px;
         }
         .page-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
+            background: rgba(0, 0, 0, 0.65); /* ทึบขึ้น */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
             width: 35px;
             height: 35px;
             border-radius: 8px;
             cursor: pointer;
             font-family: 'Prompt', sans-serif;
             font-size: 14px;
+            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
         }
-        .page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); border-color: #ff9e2c; }
+        .page-btn:hover:not(:disabled) { 
+            background: rgba(0, 0, 0, 0.85); 
+            border-color: #ff9e2c; 
+        }
         .page-btn.active {
             background: #ff9e2c;
             color: #111;
             font-weight: bold;
             border-color: #ff9e2c;
+            text-shadow: none;
         }
         .page-btn:disabled {
             opacity: 0.3;

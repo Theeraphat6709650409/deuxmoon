@@ -285,7 +285,7 @@
                 // โชว์ปุ่มหน้า 1 เสมอ
                 if (startPage > 1) {
                     paginationHtml += `<button class="page-btn" onclick="changePage(1)">1</button>`;
-                    if (startPage > 2) paginationHtml += `<span style="color:#888; display:flex; align-items:center;">...</span>`;
+                    if (startPage > 2) paginationHtml += `<span style="color:#ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); font-weight: bold; display:flex; align-items:center;">...</span>`;
                 }
 
                 // โชว์ปุ่มตรงกลาง
@@ -295,7 +295,7 @@
 
                 // โชว์ปุ่มหน้าสุดท้ายเสมอ
                 if (endPage < totalPages) {
-                    if (endPage < totalPages - 1) paginationHtml += `<span style="color:#888; display:flex; align-items:center;">...</span>`;
+                    if (endPage < totalPages - 1) paginationHtml += `<span style="color:#ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); font-weight: bold; display:flex; align-items:center;">...</span>`;
                     paginationHtml += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
                 }
 
