@@ -612,8 +612,10 @@ input:focus {
         .pagination {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap; /* เพิ่มคำสั่งนี้เพื่อให้ปุ่มปัดลงบรรทัดใหม่ */
             gap: 8px;
             margin-top: 25px;
+            padding-bottom: 20px;
         }
         .page-btn {
             background: rgba(255,255,255,0.05);

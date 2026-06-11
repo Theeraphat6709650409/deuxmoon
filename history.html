@@ -271,16 +271,37 @@
                 `;
             });
 
-            // 4. วาดปุ่มหมายเลขหน้า
+            // 4. วาดปุ่มหมายเลขหน้า (แบบย่ออัจฉริยะ ป้องกันปุ่มล้นจอ)
             if (totalPages > 1) {
                 let paginationHtml = '<div class="pagination">';
+                
+                // ปุ่มกลับหน้าก่อนหน้า
                 paginationHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">«</button>`;
                 
-                for (let i = 1; i <= totalPages; i++) {
+                // คำนวณหน้าที่จะโชว์ (โชว์หน้าปัจจุบัน หน้าก่อนหน้า 1 หน้า และหน้าถัดไป 1 หน้า)
+                let startPage = Math.max(1, currentPage - 1);
+                let endPage = Math.min(totalPages, currentPage + 1);
+
+                // โชว์ปุ่มหน้า 1 เสมอ
+                if (startPage > 1) {
+                    paginationHtml += `<button class="page-btn" onclick="changePage(1)">1</button>`;
+                    if (startPage > 2) paginationHtml += `<span style="color:#888; display:flex; align-items:center;">...</span>`;
+                }
+
+                // โชว์ปุ่มตรงกลาง
+                for (let i = startPage; i <= endPage; i++) {
                     paginationHtml += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
                 }
 
+                // โชว์ปุ่มหน้าสุดท้ายเสมอ
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) paginationHtml += `<span style="color:#888; display:flex; align-items:center;">...</span>`;
+                    paginationHtml += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+                }
+
+                // ปุ่มไปหน้าถัดไป
                 paginationHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">»</button>`;
+                
                 paginationHtml += '</div>';
                 listDiv.innerHTML += paginationHtml;
             }
