@@ -163,11 +163,14 @@ body {
 /* =========================================
    หน้าเมนูเลือกแอปพลิเคชัน (App Grid)
    ========================================= */
+/* เพิ่มระยะห่างให้ขอบซ้าย-ขวาของหน้าจอ */
 .app-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); 
-    gap: 20px; 
-    padding: 10px 0;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    padding: 0 20px; /* เพิ่มขอบซ้าย-ขวา 20px */
+    margin: 0 auto;
+    max-width: 1200px; /* จำกัดความกว้างไม่ให้ยืดจนสุดจอเกินไป */
 }
 
 .app-card {
