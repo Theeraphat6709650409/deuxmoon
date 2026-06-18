@@ -6,9 +6,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import datetime
 from functools import wraps
+import random
+import string
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+def generate_reward_code():
+    return 'DM-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 def token_required(f):
     @wraps(f)
@@ -91,7 +96,7 @@ def login():
             secret = os.environ.get("JWT_SECRET", "deuxmoon2026")
             token = jwt.encode({'user_id': user['id'], 'email': user['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)}, secret, algorithm="HS256")
             
-            user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal')}
+            user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal'), "purchase_count": user.get('purchase_count', 0)}
             return jsonify({'status': 'success', 'token': token, 'data': user_data})
         else:
             return jsonify({'status': 'error', 'message': 'รหัสผ่านไม่ถูกต้อง'}), 401
@@ -176,7 +181,6 @@ def buy_product(current_user_id):
         purchased_account = updated_rows[0]
         
         new_credit = current_credit - price
-        requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={"credit_balance": new_credit})
         
         purchase_payload = {
             "user_id": current_user_id, "product_id": target_product['id'],
@@ -191,7 +195,6 @@ def buy_product(current_user_id):
         purchased_account['warranty_addon'] = warranty_addon
         purchased_account['has_warranty'] = warranty
         
-        # แจ้งเตือนยอดขายไปยังลิงก์ DISCORD_WEBHOOK_URL_BUY
         discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL_BUY")
         if discord_webhook:
             try:
@@ -210,8 +213,31 @@ def buy_product(current_user_id):
                 requests.post(discord_webhook, json={'content': notify_msg})
             except Exception:
                 pass 
+            
+        # ระบบการตลาดสะสมแต้ม
+        current_count = int(user.get('purchase_count', 0)) + 1
+        reward_code_generated = None
+
+        if current_count >= 10:
+            current_count = 0
+            reward_code_generated = generate_reward_code()
+            promo_payload = {'code': reward_code_generated, 'amount': 10.00, 'is_used': False}
+            requests.post(f"{supabase_url}/rest/v1/promo_codes", headers=headers, json=promo_payload)
+
+        # อัปเดตข้อมูลเครดิตและจำนวนแต้มสะสมล่าสุด
+        requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={
+            "credit_balance": new_credit,
+            "purchase_count": current_count
+        })
+
+        return jsonify({
+            'status': 'success', 
+            'data': purchased_account, 
+            'remaining_credit': new_credit,
+            'purchase_count': current_count,
+            'reward_code': reward_code_generated
+        }), 200
         
-        return jsonify({'status': 'success', 'data': purchased_account, 'remaining_credit': new_credit})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -300,7 +326,7 @@ def reset_password():
 
 @app.route('/api/cron/check-expire', methods=['GET'])
 def check_expire():
-    import time # นำเข้า module time สำหรับระบบหน่วงเวลา
+    import time
     cron_key = request.args.get('key')
     expected_key = os.environ.get("CRON_SECRET", "")
     if not cron_key or cron_key != expected_key: return jsonify({'error': 'Unauthorized'}), 401
@@ -340,7 +366,6 @@ def check_expire():
             update_url = f"{supabase_url}/rest/v1/products?id=eq.{p['id']}"
             requests.patch(update_url, headers=headers, json={"status": "pending_reset"})
 
-        # ส่งเข้า LINE
         if line_token:
             try:
                 line_notify_api = 'https://notify-api.line.me/api/notify'
@@ -349,22 +374,19 @@ def check_expire():
             except:
                 pass
         
-        # 2. ระบบหั่นข้อความ Discord อัตโนมัติ (ป้องกัน Error เกิน 2,000 ตัวอักษร)
         if discord_webhook:
             current_msg = ""
             for msg in discord_messages:
-                # ถ้ารวมข้อความใหม่เข้าไปแล้วเกิน 1,900 ตัวอักษร ให้ส่งของเก่าออกไปก่อน
                 if len(current_msg) + len(msg) > 1900:
                     try:
                         requests.post(discord_webhook, json={'content': current_msg})
                     except:
                         pass
                     current_msg = msg + "\n"
-                    time.sleep(1) # หน่วง 1 วินาที ป้องกันโดน Discord แบนว่าเป็นสแปม
+                    time.sleep(1)
                 else:
                     current_msg += msg + "\n"
             
-            # ส่งข้อความก้อนสุดท้ายที่เหลืออยู่
             if current_msg:
                 try:
                     requests.post(discord_webhook, json={'content': current_msg})
@@ -423,8 +445,130 @@ def get_user_info(current_user_id):
         users = res.json()
         if not users: return jsonify({'status': 'error', 'message': 'ไม่พบบัญชีผู้ใช้'}), 404
         user = users[0]
-        user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal')}
+        user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal'), "purchase_count": user.get('purchase_count', 0)}
         return jsonify({'status': 'success', 'data': user_data})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+# --- ฟีเจอร์ข้อ 3: เปลี่ยนรหัสผ่านด้วยตัวเอง ---
+@app.route('/change-password', methods=['POST', 'OPTIONS'])
+@token_required
+def change_password(current_user_id):
+    if request.method == 'OPTIONS': return '', 200
+    data = request.json
+    new_password = data.get('new_password')
+    
+    if not new_password or len(new_password) < 6:
+        return jsonify({'status': 'error', 'message': 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร'}), 400
+
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+
+    try:
+        hashed_password = generate_password_hash(new_password)
+        requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={"password_hash": hashed_password}).raise_for_status()
+        return jsonify({'status': 'success', 'message': 'เปลี่ยนรหัสผ่านสำเร็จแล้ว'}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# --- ฟีเจอร์ข้อ 6: ระบบเคลมโค้ดเพิ่มเครดิต 10 บาท (ยกเว้น reseller) ---
+@app.route('/claim-promo', methods=['POST', 'OPTIONS'])
+@token_required
+def claim_promo(current_user_id):
+    if request.method == 'OPTIONS': return '', 200
+    data = request.json
+    input_code = data.get('code', '').strip()
+    
+    if not input_code:
+        return jsonify({'status': 'error', 'message': 'กรุณากรอกโค้ดเติมเงิน'}), 400
+        
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+
+    try:
+        user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers)
+        users = user_res.json()
+        if not users: return jsonify({'status': 'error', 'message': 'ไม่พบข้อมูลผู้ใช้งาน'}), 404
+        user = users[0]
+        
+        if user.get('role') == 'reseller':
+            return jsonify({'status': 'error', 'message': 'กลุ่มผู้ใช้งานราคาส่ง (Reseller) ไม่สามารถใช้โค้ดกิจกรรมนี้ได้'}), 403
+            
+        code_res = requests.get(f"{supabase_url}/rest/v1/promo_codes?code=eq.{input_code}", headers=headers)
+        promos = code_res.json()
+        if not promos: return jsonify({'status': 'error', 'message': 'โค้ดนี้ไม่ถูกต้องหรือไม่มีอยู่ในระบบ'}), 400
+        promo = promos[0]
+        
+        if promo.get('is_used'): return jsonify({'status': 'error', 'message': 'โค้ดนี้ถูกใช้งานไปแล้ว'}), 400
+            
+        added_amount = float(promo.get('amount', 10.00))
+        new_balance = float(user.get('credit_balance', 0)) + added_amount
+        
+        requests.patch(f"{supabase_url}/rest/v1/promo_codes?id=eq.{promo['id']}", headers=headers, json={
+            'is_used': True, 'used_by': user['email']
+        }).raise_for_status()
+        
+        requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={
+            'credit_balance': new_balance
+        }).raise_for_status()
+        
+        return jsonify({'status': 'success', 'message': f'เติมเครดิตสำเร็จ ได้รับเพิ่ม {added_amount} บาท', 'new_balance': new_balance}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# --- ดึงรายการสต็อกที่มีสถานะ pending_reset โดยเรียงตามอีเมลบัญชีสตรีมมิ่ง ---
+@app.route('/admin/pending-resets', methods=['GET', 'OPTIONS'])
+@token_required
+def get_pending_resets(current_user_id):
+    if request.method == 'OPTIONS': return '', 200
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+    
+    try:
+        user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers)
+        users = user_res.json()
+        if not users or users[0].get('role') != 'admin':
+            return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึง ข้อมูลนี้สำหรับแอดมินเท่านั้น'}), 403
+        
+        # ดึงสินค้าจากตาราง products ที่มีสถานะ pending_reset เรียงตามชื่อล็อกอินบัญชี (account_login)
+        url = f"{supabase_url}/rest/v1/products?status=eq.pending_reset&order=account_login.asc,id.asc"
+        response = requests.get(url, headers=headers)
+        return jsonify({'status': 'success', 'data': response.json()}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# --- อัปเดตข้อมูลบัญชีและเปลี่ยนสถานะสินค้าสต็อกรายชิ้น ---
+@app.route('/admin/update-stock/<int:stock_id>', methods=['PUT', 'OPTIONS'])
+@token_required
+def update_stock_item(current_user_id, stock_id):
+    if request.method == 'OPTIONS': return '', 200
+    data = request.json
+    new_email = data.get('email')
+    new_password = data.get('password')
+    new_status = data.get('status')
+    
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+    
+    try:
+        user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers)
+        users = user_res.json()
+        if not users or users[0].get('role') != 'admin':
+            return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์ดำเนินการ'}), 403
+        
+        update_data = {}
+        if new_email: update_data['account_login'] = new_email
+        if new_password: update_data['account_password'] = new_password
+        if new_status: update_data['status'] = new_status
+        
+        update_url = f"{supabase_url}/rest/v1/products?id=eq.{stock_id}"
+        requests.patch(update_url, headers=headers, json=update_data).raise_for_status()
+        
+        return jsonify({'status': 'success', 'message': 'อัปเดตข้อมูลและสถานะสินค้าสำเร็จ'}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 

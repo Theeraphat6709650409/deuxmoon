@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { LogIn, UserPlus, KeyRound, QrCode, Upload, XCircle, ShieldCheck } from 'lucide-react';
 
+import AdminPendingReset from './pages/AdminPendingReset';
+import Profile from './pages/Profile';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import History from './pages/History';
@@ -134,6 +136,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home user={user} setUser={setUser} openAuth={() => setShowAuth(true)} />} />
           <Route path="/history" element={<History user={user} />} />
+          <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
+          <Route path="/admin/pending-reset" element={<AdminPendingReset />} />
         </Routes>
 
         {showAuth && (

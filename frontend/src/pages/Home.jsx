@@ -137,10 +137,28 @@ export default function Home({ user, setUser, openAuth }) {
 
                 if (result.status === 'success') {
                     Swal.close();
-                    const updatedUser = { ...user, credit_balance: result.remaining_credit };
+    
+                    // ดึงค่า purchase_count ที่หลังบ้านส่งกลับมาอัปเดตลง State หน้าบ้านด้วย
+                    const updatedUser = { 
+                        ...user, 
+                        credit_balance: result.remaining_credit,
+                        purchase_count: result.purchase_count // เพิ่มบรรทัดนี้
+                    };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
-                    
+    
+                    // หากแต้มครบ 10 และระบบสุ่มโค้ดเงินสดให้สำเร็จ ให้ขึ้นหน้าต่างเตือนลูกค้าเป็นพิเศษ
+                    if (result.reward_code) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ยินดีด้วยคุณได้รับรางวัล!',
+                            html: `คุณซื้อสินค้าครบ 10 ครั้ง ได้รับโค้ดเติมเงิน 10 บาทฟรี:<br><br><b style="font-size: 20px; color: #ff9e2c;">${result.reward_code}</b><br><br>สามารถนำโค้ดนี้ไปกรอกใช้งานได้ที่หน้าโปรไฟล์ของคุณครับ`,
+                            background: '#1a1a2e',
+                            color: '#fff',
+                            confirmButtonColor: '#00dc5a'
+                        });
+                    }
+    
                     setReceiptData({ data: result.data, platform, displayName });
                     fetchProducts();
                 } else {
