@@ -721,10 +721,10 @@ input:focus {
     }
 
     .app-grid {
-        grid-template-columns: repeat(2, minmax(120px, 160px)) !important;
-        justify-content: center !important;
-        gap: 15px !important;
-        padding: 10px 15px !important;
+        grid-template-columns: repeat(2, minmax(120px, 160px));
+        justify-content: center;
+        gap: 15px;
+        padding: 10px 15px;
     }
 
     .app-card {
