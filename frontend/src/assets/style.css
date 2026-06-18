@@ -168,7 +168,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 15px;
-    padding: 0 20px; /* เพิ่มขอบซ้าย-ขวา 20px */
+    padding: 0 5px; /* เพิ่มขอบซ้าย-ขวา 20px */
     margin: 0 auto;
     max-width: 1200px; /* จำกัดความกว้างไม่ให้ยืดจนสุดจอเกินไป */
 }
