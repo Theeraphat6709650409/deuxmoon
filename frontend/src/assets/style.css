@@ -721,14 +721,10 @@ input:focus {
     }
 
     .app-grid {
-        /* ใช้ auto-fill เพื่อให้คอมพิวเตอร์เรียงได้หลายแถว และมือถือเรียงได้ 2 แถว */
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-        justify-content: center; 
-        gap: 15px; 
-        padding: 20px 15px; /* เพิ่ม padding ด้านบนเล็กน้อยให้ดูสบายตา */
-        max-width: 1000px; /* จำกัดความกว้างรวมเพื่อให้การ์ดไม่ใหญ่เกินไปบนจอคอม */
-        margin: 0 auto;    /* จัดให้ Grid อยู่กลางจอ */
+        grid-template-columns: repeat(2, minmax(120px, 160px)) !important;
+        justify-content: center !important;
+        gap: 15px !important;
+        padding: 10px 15px !important;
     }
 
     .app-card {
