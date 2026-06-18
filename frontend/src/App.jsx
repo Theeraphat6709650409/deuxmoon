@@ -11,6 +11,15 @@ import History from './pages/History';
 
 import qrImg from './assets/my-qr.jpg'; 
 
+// Component สำหรับป้องกันสิทธิ์ Admin
+const AdminRoute = ({ user, children }) => {
+  // ถ้ายังไม่ล็อกอิน หรือไม่ได้เป็น admin ให้ดีดกลับหน้าหลักทันที
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 const API_URL = "https://deuxmoon-api.onrender.com";
 
 function App() {
@@ -137,7 +146,7 @@ function App() {
           <Route path="/" element={<Home user={user} setUser={setUser} openAuth={() => setShowAuth(true)} />} />
           <Route path="/history" element={<History user={user} />} />
           <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
-          <Route path="/admin/pending-reset" element={<AdminPendingReset />} />
+          <Route path="/admin/pending-reset" element={<AdminRoute user={user}><AdminPendingReset /></AdminRoute>}/>
         </Routes>
 
         {showAuth && (
