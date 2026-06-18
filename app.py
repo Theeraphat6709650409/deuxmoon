@@ -518,7 +518,7 @@ def claim_promo(current_user_id):
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# --- ดึงรายการสต็อกที่มีสถานะ pending_reset โดยเรียงตามอีเมลบัญชีสตรีมมิ่ง ---
+# --- ดึงรายการสต็อกที่มีสถานะ pending_reset โดยเรียงตามอีเมล และ จอ ---
 @app.route('/admin/pending-resets', methods=['GET', 'OPTIONS'])
 @token_required
 def get_pending_resets(current_user_id):
@@ -533,14 +533,14 @@ def get_pending_resets(current_user_id):
         if not users or users[0].get('role') != 'admin':
             return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึง ข้อมูลนี้สำหรับแอดมินเท่านั้น'}), 403
         
-        # ดึงสินค้าจากตาราง products ที่มีสถานะ pending_reset เรียงตามชื่อล็อกอินบัญชี (account_login)
-        url = f"{supabase_url}/rest/v1/products?status=eq.pending_reset&order=account_login.asc,id.asc"
+        # เพิ่มการเรียงลำดับ profile_name.asc เพื่อให้จอ 1-5 เรียงกันอย่างถูกต้อง
+        url = f"{supabase_url}/rest/v1/products?status=eq.pending_reset&order=account_login.asc,profile_name.asc,id.asc"
         response = requests.get(url, headers=headers)
         return jsonify({'status': 'success', 'data': response.json()}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# --- อัปเดตข้อมูลบัญชีและเปลี่ยนสถานะสินค้าสต็อกรายชิ้น ---
+# --- อัปเดตข้อมูลบัญชี (รวมถึง PIN) และเปลี่ยนสถานะสินค้า ---
 @app.route('/admin/update-stock/<int:stock_id>', methods=['PUT', 'OPTIONS'])
 @token_required
 def update_stock_item(current_user_id, stock_id):
@@ -549,6 +549,7 @@ def update_stock_item(current_user_id, stock_id):
     new_email = data.get('email')
     new_password = data.get('password')
     new_status = data.get('status')
+    new_pin_code = data.get('pin_code') # รับค่า PIN Code
     
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -564,6 +565,7 @@ def update_stock_item(current_user_id, stock_id):
         if new_email: update_data['account_login'] = new_email
         if new_password: update_data['account_password'] = new_password
         if new_status: update_data['status'] = new_status
+        if new_pin_code is not None: update_data['pin_code'] = new_pin_code # อัปเดต PIN Code
         
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{stock_id}"
         requests.patch(update_url, headers=headers, json=update_data).raise_for_status()

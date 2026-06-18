@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { RefreshCw, Save, AlertTriangle } from 'lucide-react';
 
-const API_URL = "https://deuxmoon-api.onrender.com";
+const API_URL = "https://deuxmoon-api.onrender.com"; // หรือ http://127.0.0.1:5000 ของคุณ
 
 export default function AdminPendingReset() {
     const [items, setItems] = useState([]);
@@ -12,7 +12,6 @@ export default function AdminPendingReset() {
     const fetchPendingResets = async () => {
         setLoading(true);
         try {
-            console.log("กำลังดึงข้อมูลจาก:", `${API_URL}/admin/pending-resets`);
             const res = await fetch(`${API_URL}/admin/pending-resets`, {
                 method: 'GET',
                 headers: {
@@ -21,10 +20,9 @@ export default function AdminPendingReset() {
                 }
             });
 
-            // เช็คว่าเซิร์ฟเวอร์ตอบกลับมาเป็นโค้ด 404 หรือ 500 หรือไม่
             if (!res.ok) {
                 const errorText = await res.text();
-                throw new Error(`เซิร์ฟเวอร์ตอบกลับผิดพลาด (Status ${res.status}): ${errorText.substring(0, 100)}`);
+                throw new Error(`เซิร์ฟเวอร์ตอบกลับผิดพลาด (Status ${res.status})`);
             }
 
             const result = await res.json();
@@ -34,15 +32,7 @@ export default function AdminPendingReset() {
                 Swal.fire({ icon: 'error', title: 'ดึงข้อมูลล้มเหลว', text: result.message, background: '#1a1a2e', color: '#fff' });
             }
         } catch (err) {
-            console.error("Detailed Fetch Error:", err);
-            // แสดง Error ของจริงออกมาบนหน้าจอ
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'ข้อผิดพลาดของระบบ', 
-                text: err.message, 
-                background: '#1a1a2e', 
-                color: '#fff' 
-            });
+            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดของระบบ', text: err.message, background: '#1a1a2e', color: '#fff' });
         } finally {
             setLoading(false);
         }
@@ -68,6 +58,7 @@ export default function AdminPendingReset() {
         const payload = {
             email: updatedFields.email !== undefined ? updatedFields.email : originalItem.account_login,
             password: updatedFields.password !== undefined ? updatedFields.password : originalItem.account_password,
+            pin_code: updatedFields.pin_code !== undefined ? updatedFields.pin_code : (originalItem.pin_code || ''), // ดึงค่าพิน
             status: updatedFields.status !== undefined ? updatedFields.status : originalItem.status
         };
 
@@ -94,12 +85,12 @@ export default function AdminPendingReset() {
     };
 
     return (
-        <div className="container" style={{ maxWidth: '1100px' }}>
+        <div className="container" style={{ maxWidth: '1200px' }}>
             <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                 <RefreshCw size={28}/> จัดการรายการสินค้า รอรีเซ็ต (Pending Reset)
             </h2>
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', marginTop: '-15px' }}>
-                ข้อมูลเรียงลำดับตามอีเมลอัตโนมัติ เพื่อให้ง่ายต่อการตรวจเช็คบัญชีชุดเดียวกัน
+                ข้อมูลเรียงลำดับตามอีเมลและจออัตโนมัติ เพื่อให้ง่ายต่อการตรวจเช็คบัญชีชุดเดียวกัน
             </p>
 
             {loading ? (
@@ -116,8 +107,9 @@ export default function AdminPendingReset() {
                             <tr>
                                 <th>แพลตฟอร์ม</th>
                                 <th>จอที่ใช้งาน</th>
-                                <th>อีเมลบัญชี (Email)</th>
+                                <th>อีเมล (Email)</th>
                                 <th>รหัสผ่าน (Password)</th>
+                                <th style={{ textAlign: 'center' }}>PIN</th>
                                 <th>สถานะ (Status)</th>
                                 <th style={{ textAlign: 'center' }}>การจัดการ</th>
                             </tr>
@@ -126,10 +118,10 @@ export default function AdminPendingReset() {
                             {items.map((item) => {
                                 return (
                                     <tr key={item.id}>
-                                        <td style={{ fontWeight: '600', color: 'var(--text-light)' }}>
-                                            {item.platform ? item.platform.toUpperCase() : "ไม่ระบุประเภท"}
+                                        <td style={{ fontWeight: '600', color: 'var(--text-light)', fontSize: '12px' }}>
+                                            {item.platform ? item.platform.toUpperCase() : "ไม่ระบุ"}
                                         </td>
-                                        <td style={{ color: 'var(--theme-orange)', fontWeight: '500' }}>
+                                        <td style={{ color: 'var(--theme-orange)', fontWeight: 'bold' }}>
                                             {item.profile_name || "-"}
                                         </td>
                                         <td>
@@ -146,6 +138,16 @@ export default function AdminPendingReset() {
                                                 className="input-table"
                                                 defaultValue={item.account_password}
                                                 onChange={(e) => handleInputChange(item.id, 'password', e.target.value)}
+                                            />
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <input 
+                                                type="text" 
+                                                className="input-table"
+                                                style={{ width: '60px', textAlign: 'center' }}
+                                                defaultValue={item.pin_code || ''}
+                                                placeholder="ไม่มี"
+                                                onChange={(e) => handleInputChange(item.id, 'pin_code', e.target.value)}
                                             />
                                         </td>
                                         <td>
