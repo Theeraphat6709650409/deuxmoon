@@ -72,18 +72,28 @@ function formatThaiDate(dateString) {
     return `${d} ${m} ${y} เวลา ${time} น.`;
 }
 
-// เช็คสถานะวันหมดอายุ
+// เช็คสถานะวันหมดอายุ (แก้ไขปัญหา Timezone บั๊กวันเกิน)
 function getExpiryStatus(expireStr) {
     if (!expireStr) return { isExpiring: false, diffDays: 0, isExpired: false };
-    const expDate = new Date(expireStr.split(' ')[0]);
+    
+    // 1. ดึงแค่วันที่ (ตัดเวลาทิ้ง) แล้วจับแยก ปี-เดือน-วัน ออกจากกัน
+    const dateString = expireStr.split(' ')[0];
+    const [year, month, day] = dateString.split('-');
+    
+    // 2. บังคับสร้าง Date Object ให้เป็นเวลา Local (ไทย) เที่ยงคืนตรง
+    const expDate = new Date(year, parseInt(month) - 1, day);
+    
+    // 3. ดึงวันที่ปัจจุบัน และเซ็ตเป็นเที่ยงคืนตรง
     const now = new Date();
-    now.setHours(0,0,0,0);
+    now.setHours(0, 0, 0, 0);
+    
+    // 4. นำมาลบกัน แล้วใช้ Math.round (ปัดเศษตามจริง) ป้องกันเศษเวลาเกิน
     const diffTime = expDate - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     return {
         isExpiring: diffDays >= 0 && diffDays <= 3,
-        diffDays,
+        diffDays: diffDays,
         isExpired: diffDays < 0
     };
 }
