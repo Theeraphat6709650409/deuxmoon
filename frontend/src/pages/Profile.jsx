@@ -110,7 +110,9 @@ export default function Profile({ user, setUser }) {
                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
                         <div style="text-align: left;">
                             <div style="color: #ff9e2c; font-weight: bold; font-size: 16px; letter-spacing: 1px;">${c.code}</div>
-                            <div style="color: #888; font-size: 12px;">มูลค่า: <span style="color: #00dc5a">${c.amount} บาท</span></div>
+                            <div style="color: #00dc5a; font-size: 13px;">
+                                ${c.discount_percent ? 'ส่วนลด ' + c.discount_percent + '% (ซื้อครั้งถัดไป)' : 'มูลค่า ' + c.amount + ' บาท'}
+                            </div>
                         </div>
                         <button onclick="navigator.clipboard.writeText('${c.code}'); this.innerText='คัดลอกแล้ว!'; this.style.background='#00dc5a'; this.style.color='#111';" style="background: rgba(255,255,255,0.1); border: 1px solid #555; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.3s;">คัดลอก</button>
                     </div>`;
@@ -167,11 +169,11 @@ export default function Profile({ user, setUser }) {
             {!isReseller && (
                 <div className="profile-card">
                     <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--theme-orange)' }}><Award size={18}/> ระบบสะสมแต้มการซื้อสำเร็จ</h3>
-                    <p style={{ fontSize: '14px', color: '#bbb' }}>ซื้อสินค้าครบทุกๆ 10 ครั้ง รับฟรีทันทีโค้ดเงินสดมูลค่า 10 บาท</p>
+                    <p style={{ fontSize: '14px', color: '#bbb' }}>ซื้อสินค้าครบทุกๆ 200 บาท รับฟรีทันทีโค้ดส่วนลด 10%</p>
                     
                     <div className="progress-bar-container">
                         <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
-                        <div className="progress-text">{purchaseCount} / 10 ครั้ง</div>
+                        <div className="progress-text">{purchaseCount} / 200 บาท</div>
                     </div>
                 </div>
             )}

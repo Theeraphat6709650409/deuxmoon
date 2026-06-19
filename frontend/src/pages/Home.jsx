@@ -107,27 +107,35 @@ export default function Home({ user, setUser, openAuth }) {
             return openAuth();
         }
 
-        if (parseFloat(user.credit_balance) < finalPrice) {
-            return Swal.fire({ icon: 'error', title: 'ยอดเงินไม่เพียงพอ', text: 'กรุณาเติมเงินก่อนทำรายการสั่งซื้อครับ', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#00dc5a' });
-        }
-
         const confirm = await Swal.fire({
             title: 'ยืนยันการสั่งซื้อ',
-            html: `แพ็กเกจ <b>${displayName}</b>${isWarrantySelected ? '<br><span style="color: #00dc5a; font-size: 14px;">สินค้านี้มีประกันเคลมบัญชี</span>' : ''}<br>ยอดชำระ <b>${finalPrice}</b> บาท`,
+            html: `แพ็กเกจ <b>${displayName}</b>${isWarrantySelected ? '<br><span style="color: #00dc5a; font-size: 14px;">สินค้านี้มีประกันเคลมบัญชี</span>' : ''}<br>
+            ราคาปกติ <b>${finalPrice}</b> บาท<br><br>
+            <div style="text-align: left; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #555;">
+                <label style="font-size: 13px; color: #aaa;">โค้ดส่วนลด (ถ้ามี):</label>
+                <input type="text" id="promoInput" class="swal2-input" placeholder="กรอกโค้ด 10% ที่นี่..." style="margin-top: 5px; margin-bottom: 0; font-size: 14px; text-transform: uppercase; width: 90%; height: 35px; border-radius: 4px;">
+            </div>`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#00dc5a', cancelButtonColor: '#ff4d4d',
             confirmButtonText: 'ยืนยันการซื้อ', cancelButtonText: 'ยกเลิก',
-            background: '#1a1a2e', color: '#fff'
+            background: '#1a1a2e', color: '#fff',
+            preConfirm: () => {
+                const promoCode = document.getElementById('promoInput').value;
+                return { promoCode: promoCode.trim().toUpperCase() };
+            }
         });
 
         if (confirm.isConfirmed) {
+            const appliedPromo = confirm.value.promoCode;
             Swal.fire({ title: 'กำลังทำรายการ...', allowOutsideClick: false, background: '#1a1a2e', color: '#fff', didOpen: () => Swal.showLoading() });
+            
             try {
                 const res = await fetch(`${API_URL}/buy`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                    body: JSON.stringify({ platform: platform, duration_days: duration_days, warranty: isWarrantySelected })
+                    // ส่งข้อมูล promo_code ไปให้หลังบ้านคำนวณส่วนลด
+                    body: JSON.stringify({ platform: platform, duration_days: duration_days, warranty: isWarrantySelected, promo_code: appliedPromo })
                 });
                 const result = await res.json();
 
@@ -137,7 +145,7 @@ export default function Home({ user, setUser, openAuth }) {
                     const updatedUser = { 
                         ...user, 
                         credit_balance: result.remaining_credit,
-                        purchase_count: result.purchase_count 
+                        total_spent: result.total_spent
                     };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -145,13 +153,13 @@ export default function Home({ user, setUser, openAuth }) {
                     if (result.reward_code) {
                         Swal.fire({
                             icon: 'success',
-                            title: 'ยินดีด้วยคุณได้รับรางวัล!',
-                            html: `คุณซื้อสินค้าครบ 10 ครั้ง ได้รับโค้ดเติมเงิน 10 บาทฟรี:<br><br>
+                            title: 'ยอดสะสมถึงเกณฑ์!',
+                            html: `คุณได้รับโค้ดส่วนลด 10% สำหรับการซื้อครั้งถัดไป:<br><br>
                             <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(255,158,44,0.1); padding: 12px; border-radius: 8px; border: 1px dashed #ff9e2c;">
                                 <b style="font-size: 20px; color: #ff9e2c;">${result.reward_code}</b>
                                 <button id="copyRewardBtn" style="background: #ff9e2c; color: #111; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">คัดลอก</button>
                             </div><br>
-                            <span style="font-size: 13px; color: #aaa;">(โค้ดนี้ถูกเก็บไว้ในกระเป๋าของคุณแล้ว สามารถดูย้อนหลังได้ครับ)</span>`,
+                            <span style="font-size: 13px; color: #aaa;">(โค้ดนี้ถูกเก็บไว้ในหน้าโปรไฟล์ของคุณแล้วครับ)</span>`,
                             background: '#1a1a2e',
                             color: '#fff',
                             confirmButtonColor: '#00dc5a',
