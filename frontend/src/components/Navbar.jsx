@@ -72,11 +72,18 @@ export default function Navbar({ user, onLogout, onOpenAuth, onOpenTopup }) {
 
               {/* ปุ่มเมนูสำหรับ Admin (ซ่อนจาก User ทั่วไป) */}
               {user.role === 'admin' && (
-                <Link to="/admin/pending-reset" style={{ textDecoration: 'none' }}>
-                  <button className="btn-topup" style={{ background: 'linear-gradient(135deg, #ff9e2c 0%, #ff6d00 100%)', color: '#111', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldAlert size={16} /> จัดการสต็อก
-                  </button>
-                </Link>
+                <>
+                  <Link to="/admin/dashboard" style={{ textDecoration: 'none' }}>
+                    <button className="btn-topup" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <BarChart3 size={16} /> สถิติร้าน
+                    </button>
+                  </Link>
+                    <Link to="/admin/pending-reset" style={{ textDecoration: 'none' }}>
+                    <button className="btn-topup" style={{ background: 'linear-gradient(135deg, #ff9e2c 0%, #ff6d00 100%)', color: '#111', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ShieldAlert size={16} /> จัดการสต็อก
+                    </button>
+                  </Link>
+                </>
               )}
               
               <Link to="/history" style={{ textDecoration: 'none' }}>

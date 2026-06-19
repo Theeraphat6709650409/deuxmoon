@@ -574,5 +574,79 @@ def update_stock_item(current_user_id, stock_id):
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+
+# --- ดึงข้อมูลสถิติภาพรวมร้านค้าสำหรับแอดมิน ---
+@app.route('/admin/stats', methods=['GET', 'OPTIONS'])
+@token_required
+def get_admin_stats(current_user_id):
+    if request.method == 'OPTIONS': return '', 200
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+    
+    # รับค่า range จากหน้าบ้าน (ค่าเริ่มต้นคือ all)
+    time_range = request.args.get('range', 'all')
+
+    try:
+        user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}&select=role", headers=headers)
+        if not user_res.json() or user_res.json()[0].get('role') != 'admin':
+            return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึง'}), 403
+
+        # สร้างตัวกรองเวลา (Date Filter)
+        date_filter = ""
+        if time_range != 'all':
+            tz = datetime.timezone(datetime.timedelta(hours=7)) # เวลาไทย
+            now = datetime.datetime.now(tz)
+            if time_range == 'today':
+                start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            elif time_range == '7days':
+                start_date = now - datetime.timedelta(days=7)
+            elif time_range == '30days':
+                start_date = now - datetime.timedelta(days=30)
+            
+            # แปลงเป็นรูปแบบ ISO เพื่อใช้กรองกับ Supabase
+            start_date_str = start_date.strftime('%Y-%m-%dT%H:%M:%S')
+            date_filter = f"&created_at=gte.{start_date_str}"
+
+        # 1. นับจำนวนสมาชิก (อิงตามเวลาที่สมัคร)
+        users_url = f"{supabase_url}/rest/v1/users?select=id" + date_filter
+        users_res = requests.get(users_url, headers=headers)
+        total_users = len(users_res.json())
+
+        # 2. คำนวณยอดเติมเงินรวม (อิงตามเวลาที่เติม)
+        topup_url = f"{supabase_url}/rest/v1/topup_transactions?select=amount" + date_filter
+        topup_res = requests.get(topup_url, headers=headers)
+        total_revenue = sum(float(tx['amount']) for tx in topup_res.json())
+
+        # 3. นับจำนวนออเดอร์ที่ขายออกไป (อิงตามเวลาที่ซื้อ)
+        purchases_url = f"{supabase_url}/rest/v1/purchases?select=id" + date_filter
+        purchases_res = requests.get(purchases_url, headers=headers)
+        total_purchases = len(purchases_res.json())
+
+        # 4. สรุปสถานะสต็อกสินค้า (เป็นข้อมูล Real-time ไม่ต้องใช้ date_filter)
+        products_res = requests.get(f"{supabase_url}/rest/v1/products?select=status", headers=headers)
+        products = products_res.json()
+        stock_available = len([p for p in products if p.get('status') == 'available'])
+        stock_sold = len([p for p in products if p.get('status') == 'sold'])
+        stock_pending = len([p for p in products if p.get('status') == 'pending_reset'])
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'total_users': total_users,
+                'total_revenue': total_revenue,
+                'total_purchases': total_purchases,
+                'stock': {
+                    'available': stock_available,
+                    'sold': stock_sold,
+                    'pending': stock_pending,
+                    'total': len(products)
+                }
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

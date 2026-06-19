@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import History from './pages/History';
+import AdminDashboard from './pages/AdminDashboard';
 
 import qrImg from './assets/my-qr.jpg'; 
 
@@ -147,7 +148,7 @@ function App() {
           <Route path="/history" element={<History user={user} />} />
           <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
           <Route path="/admin/pending-reset" element={<AdminRoute user={user}><AdminPendingReset /></AdminRoute>}/>
-        </Routes>
+          <Route path="/admin/dashboard" element={<AdminRoute user={user}><AdminDashboard /></AdminRoute>} /></Routes>
 
         {showAuth && (
           <div className="modal-overlay">
