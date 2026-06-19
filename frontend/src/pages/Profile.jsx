@@ -133,10 +133,10 @@ export default function Profile({ user, setUser }) {
         }
     };
 
-    const totalSpent = parseFloat(user.total_spent || 0);
-    const currentProgress = totalSpent % 200; // หาเศษที่ต้องสะสมในรอบปัจจุบัน
-    const progressPercent = (currentProgress / 200) * 100;
-    const isReseller = user.role === 'reseller';
+    const totalSpent = parseFloat(user?.total_spent || 0);
+    const currentProgress = totalSpent % 500;
+    const progressPercent = (currentProgress / 500) * 100;
+    const isReseller = user?.role === 'reseller';
 
     return (
         <div className="profile-container">
@@ -170,10 +170,13 @@ export default function Profile({ user, setUser }) {
             {!isReseller && (
                 <div className="profile-card">
                     <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--theme-orange)' }}><Award size={18}/> ระบบสะสมยอดการซื้อสำเร็จ</h3>
-                    <p style={{ fontSize: '14px', color: '#bbb' }}>ซื้อสินค้าครบทุกๆ 200 บาท รับฟรีทันทีโค้ดส่วนลด 10%</p>
+                    <p style={{ fontSize: '14px', color: '#bbb' }}>ซื้อสินค้าครบทุกๆ 500 บาท รับฟรีทันทีโค้ดส่วนลด 10%</p>
                     
-                    <div className="progress-text">
-                        {currentProgress.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / 200 บาท
+                    <div className="progress-bar-container">
+                        <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
+                        <div className="progress-text">
+                            {currentProgress.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / 500 บาท
+                        </div>
                     </div>
                 </div>
             )}

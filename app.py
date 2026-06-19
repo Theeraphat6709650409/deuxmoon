@@ -256,7 +256,7 @@ def buy_product(current_user_id):
         reward_code_generated = None
 
         if user_role != 'reseller':
-            if int(total_spent // 200) > int(float(user.get('total_spent', 0)) // 200):
+            if int(total_spent // 500) > int(float(user.get('total_spent', 0)) // 500):
                 reward_code_generated = generate_reward_code()
                 promo_payload = {
                     'code': reward_code_generated, 
@@ -601,7 +601,8 @@ def get_pending_resets(current_user_id):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # --- อัปเดตข้อมูลบัญชี (รวมถึง PIN) และเปลี่ยนสถานะสินค้า ---
-@app.route('/admin/update-stock/<int:stock_id>', methods=['PUT', 'OPTIONS'])
+# เปลี่ยนจาก <int:stock_id> เป็น <string:stock_id> เพื่อให้รองรับรหัสแบบ UUID
+@app.route('/admin/update-stock/<string:stock_id>', methods=['PUT', 'OPTIONS'])
 @token_required
 def update_stock_item(current_user_id, stock_id):
     if request.method == 'OPTIONS': return '', 200
@@ -627,8 +628,10 @@ def update_stock_item(current_user_id, stock_id):
         if new_status: update_data['status'] = new_status
         if new_pin_code is not None: update_data['pin_code'] = new_pin_code # อัปเดต PIN Code
         
+        # อัปเดตไปยัง Supabase
         update_url = f"{supabase_url}/rest/v1/products?id=eq.{stock_id}"
-        requests.patch(update_url, headers=headers, json=update_data).raise_for_status()
+        res = requests.patch(update_url, headers=headers, json=update_data)
+        res.raise_for_status()
         
         return jsonify({'status': 'success', 'message': 'อัปเดตข้อมูลและสถานะสินค้าสำเร็จ'}), 200
     except Exception as e:

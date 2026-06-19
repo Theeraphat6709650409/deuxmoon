@@ -107,21 +107,31 @@ export default function Home({ user, setUser, openAuth }) {
             return openAuth();
         }
 
+        // เช็คว่าผู้ใช้งานเป็น reseller หรือไม่
+        const isReseller = user.role === 'reseller';
+
+        // สร้าง HTML สำหรับช่องกรอกโค้ด (ถ้าเป็น reseller จะได้ค่าว่างไปแสดงผลแทน)
+        const promoInputHtml = isReseller ? '' : `
+            <div style="text-align: left; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #555;">
+                <label style="font-size: 13px; color: #aaa;">โค้ดส่วนลด 10% (ถ้ามี):</label>
+                <input type="text" id="promoInput" class="swal2-input" placeholder="กรอกโค้ดที่นี่..." style="margin-top: 5px; margin-bottom: 0; font-size: 14px; text-transform: uppercase; width: 90%; height: 35px; border-radius: 4px;">
+            </div>
+        `;
+
         const confirm = await Swal.fire({
             title: 'ยืนยันการสั่งซื้อ',
             html: `แพ็กเกจ <b>${displayName}</b>${isWarrantySelected ? '<br><span style="color: #00dc5a; font-size: 14px;">สินค้านี้มีประกันเคลมบัญชี</span>' : ''}<br>
             ราคาปกติ <b>${finalPrice}</b> บาท<br><br>
-            <div style="text-align: left; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #555;">
-                <label style="font-size: 13px; color: #aaa;">โค้ดส่วนลด (ถ้ามี):</label>
-                <input type="text" id="promoInput" class="swal2-input" placeholder="กรอกโค้ด 10% ที่นี่..." style="margin-top: 5px; margin-bottom: 0; font-size: 14px; text-transform: uppercase; width: 90%; height: 35px; border-radius: 4px;">
-            </div>`,
+            ${promoInputHtml}`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#00dc5a', cancelButtonColor: '#ff4d4d',
             confirmButtonText: 'ยืนยันการซื้อ', cancelButtonText: 'ยกเลิก',
             background: '#1a1a2e', color: '#fff',
             preConfirm: () => {
-                const promoCode = document.getElementById('promoInput').value;
+                // ดักจับกรณีที่ไม่มีช่องกรอกโค้ด (reseller)
+                const promoInputEl = document.getElementById('promoInput');
+                const promoCode = promoInputEl ? promoInputEl.value : '';
                 return { promoCode: promoCode.trim().toUpperCase() };
             }
         });
@@ -134,7 +144,6 @@ export default function Home({ user, setUser, openAuth }) {
                 const res = await fetch(`${API_URL}/buy`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                    // ส่งข้อมูล promo_code ไปให้หลังบ้านคำนวณส่วนลด
                     body: JSON.stringify({ platform: platform, duration_days: duration_days, warranty: isWarrantySelected, promo_code: appliedPromo })
                 });
                 const result = await res.json();
@@ -145,7 +154,8 @@ export default function Home({ user, setUser, openAuth }) {
                     const updatedUser = { 
                         ...user, 
                         credit_balance: result.remaining_credit,
-                        total_spent: result.total_spent
+                        total_spent: result.total_spent,
+                        purchase_count: result.purchase_count 
                     };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
