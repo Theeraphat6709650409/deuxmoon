@@ -91,6 +91,46 @@ export default function Profile({ user, setUser }) {
         }
     };
 
+    const openMyCodes = async () => {
+        Swal.fire({ title: 'กำลังโหลด...', background: '#1a1a2e', color: '#fff', didOpen: () => Swal.showLoading() });
+        try {
+            const res = await fetch("https://deuxmoon-api.onrender.com/my-codes", { // อย่าลืมแก้ URL ถ้าเทสในเครื่อง
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+                if (result.data.length === 0) {
+                    return Swal.fire({ icon: 'info', title: 'กระเป๋าว่างเปล่า', text: 'คุณยังไม่มีโค้ดรางวัลที่ยังไม่ได้ใช้งานครับ', background: '#1a1a2e', color: '#fff' });
+                }
+                
+                let htmlList = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
+                result.data.forEach((c) => {
+                    htmlList += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                        <div style="text-align: left;">
+                            <div style="color: #ff9e2c; font-weight: bold; font-size: 16px; letter-spacing: 1px;">${c.code}</div>
+                            <div style="color: #888; font-size: 12px;">มูลค่า: <span style="color: #00dc5a">${c.amount} บาท</span></div>
+                        </div>
+                        <button onclick="navigator.clipboard.writeText('${c.code}'); this.innerText='คัดลอกแล้ว!'; this.style.background='#00dc5a'; this.style.color='#111';" style="background: rgba(255,255,255,0.1); border: 1px solid #555; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.3s;">คัดลอก</button>
+                    </div>`;
+                });
+                htmlList += '</div>';
+                
+                Swal.fire({
+                    title: '🎁 กระเป๋าโค้ดของคุณ',
+                    html: htmlList,
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    showConfirmButton: false,
+                    showCloseButton: true
+                });
+            }
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'ดึงข้อมูลล้มเหลว', background: '#1a1a2e', color: '#fff' });
+        }
+    };
+
     const purchaseCount = user.purchase_count || 0;
     const progressPercent = (purchaseCount / 10) * 100;
     const isReseller = user.role === 'reseller';
@@ -98,6 +138,27 @@ export default function Profile({ user, setUser }) {
     return (
         <div className="profile-container">
             <button className="btn-back" onClick={() => navigate('/')}>กลับหน้าหลัก</button>
+            <button 
+                onClick={openMyCodes} 
+                className="btn-profile" 
+                style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    marginBottom: '10px', 
+                    background: 'rgba(255, 158, 44, 0.1)', 
+                    border: '1px dashed #ff9e2c', 
+                    color: '#ff9e2c', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontWeight: 'bold'
+                }}
+>
+                🎁 กระเป๋าโค้ดรางวัลของฉัน
+            </button>
             <h2 className="section-title">ข้อมูลบัญชีผู้ใช้</h2>
 
             {/* ส่วนข้อมูลทั่วไป */}

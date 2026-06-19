@@ -146,10 +146,23 @@ export default function Home({ user, setUser, openAuth }) {
                         Swal.fire({
                             icon: 'success',
                             title: 'ยินดีด้วยคุณได้รับรางวัล!',
-                            html: `คุณซื้อสินค้าครบ 10 ครั้ง ได้รับโค้ดเติมเงิน 10 บาทฟรี:<br><br><b style="font-size: 20px; color: #ff9e2c;">${result.reward_code}</b><br><br>สามารถนำโค้ดนี้ไปกรอกใช้งานได้ที่หน้าโปรไฟล์ของคุณครับ`,
+                            html: `คุณซื้อสินค้าครบ 10 ครั้ง ได้รับโค้ดเติมเงิน 10 บาทฟรี:<br><br>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(255,158,44,0.1); padding: 12px; border-radius: 8px; border: 1px dashed #ff9e2c;">
+                                <b style="font-size: 20px; color: #ff9e2c;">${result.reward_code}</b>
+                                <button id="copyRewardBtn" style="background: #ff9e2c; color: #111; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">คัดลอก</button>
+                            </div><br>
+                            <span style="font-size: 13px; color: #aaa;">(โค้ดนี้ถูกเก็บไว้ในกระเป๋าของคุณแล้ว สามารถดูย้อนหลังได้ครับ)</span>`,
                             background: '#1a1a2e',
                             color: '#fff',
-                            confirmButtonColor: '#00dc5a'
+                            confirmButtonColor: '#00dc5a',
+                            didOpen: () => {
+                                const btn = document.getElementById('copyRewardBtn');
+                                btn.addEventListener('click', () => {
+                                    navigator.clipboard.writeText(result.reward_code);
+                                    btn.innerText = 'คัดลอกแล้ว!';
+                                    btn.style.background = '#00dc5a';
+                                });
+                            }
                         });
                     }
     

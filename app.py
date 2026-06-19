@@ -214,15 +214,19 @@ def buy_product(current_user_id):
             except Exception:
                 pass 
             
-        # ระบบการตลาดสะสมแต้ม
-        current_count = int(user.get('purchase_count', 0)) + 1
+        # ระบบการตลาดสะสมแต้ม (ตรวจสอบสิทธิ์: บล็อกกลุ่ม Reseller)
+        current_count = int(user.get('purchase_count', 0))
         reward_code_generated = None
 
-        if current_count >= 10:
-            current_count = 0
-            reward_code_generated = generate_reward_code()
-            promo_payload = {'code': reward_code_generated, 'amount': 10.00, 'is_used': False}
-            requests.post(f"{supabase_url}/rest/v1/promo_codes", headers=headers, json=promo_payload)
+        # จะบวกแต้มและแจกโค้ดก็ต่อเมื่อผู้ใช้ไม่ใช่ reseller
+        if user_role != 'reseller':
+            current_count += 1
+            if current_count >= 10:
+                current_count = 0
+                reward_code_generated = generate_reward_code()
+                # เพิ่ม 'user_id': current_user_id เข้าไป เพื่อผูกโค้ดกับบัญชีนี้
+                promo_payload = {'code': reward_code_generated, 'amount': 10.00, 'is_used': False, 'user_id': current_user_id}
+                requests.post(f"{supabase_url}/rest/v1/promo_codes", headers=headers, json=promo_payload)
 
         # อัปเดตข้อมูลเครดิตและจำนวนแต้มสะสมล่าสุด
         requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={
@@ -646,6 +650,22 @@ def get_admin_stats(current_user_id):
             }
         }), 200
 
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+# --- ดึงกระเป๋าโค้ดรางวัลส่วนตัว (ที่ยังไม่ได้ใช้) ---
+@app.route('/my-codes', methods=['GET', 'OPTIONS'])
+@token_required
+def get_my_codes(current_user_id):
+    if request.method == 'OPTIONS': return '', 200
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+    
+    try:
+        # ดึงเฉพาะโค้ดของตัวเอง ที่ยังไม่ได้ใช้ (is_used = false)
+        res = requests.get(f"{supabase_url}/rest/v1/promo_codes?user_id=eq.{current_user_id}&is_used=eq.false", headers=headers)
+        return jsonify({'status': 'success', 'data': res.json()}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
