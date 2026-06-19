@@ -138,27 +138,7 @@ export default function Profile({ user, setUser }) {
     return (
         <div className="profile-container">
             <button className="btn-back" onClick={() => navigate('/')}>กลับหน้าหลัก</button>
-            <button 
-                onClick={openMyCodes} 
-                className="btn-profile" 
-                style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    marginBottom: '10px', 
-                    background: 'rgba(255, 158, 44, 0.1)', 
-                    border: '1px dashed #ff9e2c', 
-                    color: '#ff9e2c', 
-                    borderRadius: '8px', 
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    fontWeight: 'bold'
-                }}
->
-                🎁 กระเป๋าโค้ดรางวัลของฉัน
-            </button>
+        
             <h2 className="section-title">ข้อมูลบัญชีผู้ใช้</h2>
 
             {/* ส่วนข้อมูลทั่วไป */}
@@ -195,6 +175,28 @@ export default function Profile({ user, setUser }) {
                     </div>
                 </div>
             )}
+
+            <button 
+                onClick={openMyCodes} 
+                className="btn-profile" 
+                style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    marginBottom: '10px', 
+                    background: 'rgba(255, 158, 44, 0.1)', 
+                    border: '1px dashed #ff9e2c', 
+                    color: '#ff9e2c', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontWeight: 'bold'
+                }}
+>
+                🎁 กระเป๋าโค้ดรางวัลของฉัน
+            </button>
 
             {/* ส่วนกรอกโค้ดเพิ่มเครดิต */}
             <div className="profile-card">
