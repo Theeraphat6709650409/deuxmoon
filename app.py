@@ -107,52 +107,56 @@ def login():
 @token_required
 def buy_product(current_user_id):
     if request.method == 'OPTIONS': return '', 200
+    data = request.json
+    platform = data.get('platform')
+    duration_days = data.get('duration_days')
+    warranty = data.get('warranty', False)
+    promo_code_input = data.get('promo_code', '').strip() # รับค่าโค้ดส่วนลด
+
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
-    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
-    
-    try:
-        data = request.json
-        platform = data.get('platform')
-        duration_days = int(data.get('duration_days'))
-        warranty = data.get('warranty', False)
-        promo_code_input = data.get('promo_code', '').strip()
+    headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json", "Prefer": "return=representation"}
 
-        # 1. ตรวจสอบสินค้าคงเหลือ
-        query = f"platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available"
-        res = requests.get(f"{supabase_url}/rest/v1/products?{query}&limit=1", headers=headers)
-        available_products = res.json()
-        
-        if not available_products:
-            return jsonify({'status': 'error', 'message': 'สินค้าหมด'}), 400
-            
-        product = available_products[0]
-        
-        # 2. ดึงข้อมูลผู้ใช้
+    try:
         user_res = requests.get(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers)
         user = user_res.json()[0]
-        current_credit = float(user.get('credit_balance', 0))
-        user_role = user.get('role', 'customer')
+        current_credit = float(user['credit_balance'])
+        user_role = user.get('role', 'normal')
 
-        # 3. กำหนดราคาพื้นฐาน
-        normal_price = float(product.get('price'))
-        wholesale_price = product.get('wholesale_price')
-        if user_role == 'reseller' and wholesale_price is not None:
+        get_url = f"{supabase_url}/rest/v1/products?platform=eq.{platform}&duration_days=eq.{duration_days}&status=eq.available&order=account_login.asc,profile_name.asc,id.asc&limit=1"
+        res = requests.get(get_url, headers=headers)
+        products = res.json()
+        
+        if not products: return jsonify({'status': 'error', 'message': 'สินค้าหมดชั่วคราว'}), 404
+        target_product = products[0]
+        
+        normal_price = float(target_product['price'])
+        wholesale_price = target_product.get('wholesale_price')
+        
+        if user_role == 'reseller' and wholesale_price is not None and str(wholesale_price).strip() != "":
             base_price = float(wholesale_price)
         else:
             base_price = normal_price
-
-        # คำนวณราคาประกัน
+            
         warranty_addon = 0
-        if warranty:
+        if warranty and platform.startswith('netflix'):
             if user_role == 'reseller':
-                warranty_addon = 5 if duration_days == 7 else (23 if platform == 'netflix_mobile' else 25)
+                if int(duration_days) == 7:
+                    warranty_addon = 5
+                elif int(duration_days) == 30:
+                    if platform == 'netflix_mobile':
+                        warranty_addon = 23
+                    else:
+                        warranty_addon = 25
             else:
-                warranty_addon = 10 if duration_days == 7 else 25
+                if int(duration_days) == 7:
+                    warranty_addon = 10
+                elif int(duration_days) == 30:
+                    warranty_addon = 25
+                
+        price = base_price + warranty_addon
 
-        finalPrice = base_price + warranty_addon
-
-        # --- ส่วนสำคัญ: ตรวจสอบและหักลบโค้ดส่วนลด ---
+        # --- เพิ่มระบบ: ตรวจสอบและหักลบโค้ดส่วนลด ---
         discount_amount = 0
         applied_promo_id = None
 
@@ -166,7 +170,6 @@ def buy_product(current_user_id):
             promo = promo_data[0]
             promo_owner = promo.get('user_id')
             
-            # โค้ดนี้ต้องเป็นของผู้ใช้คนนี้ หรือเป็นโค้ดส่วนกลาง (null)
             if promo_owner and promo_owner != current_user_id:
                 return jsonify({'status': 'error', 'message': 'โค้ดส่วนลดนี้เป็นของบัญชีอื่น'}), 400
 
@@ -174,78 +177,105 @@ def buy_product(current_user_id):
             discount_percent = int(promo.get('discount_percent') or 0)
             flat_amount = float(promo.get('amount') or 0)
 
-            # คำนวณว่าลดไปกี่บาท
             if discount_percent > 0:
-                discount_amount = finalPrice * (discount_percent / 100.0)
+                discount_amount = price * (discount_percent / 100.0)
             elif flat_amount > 0:
                 discount_amount = flat_amount
 
-        # ราคาหลังหักส่วนลด (บังคับไม่ให้ราคาติดลบ)
-        price_to_deduct = max(0, finalPrice - discount_amount)
+        # ราคาหลังหักส่วนลด
+        price_to_deduct = max(0, price - discount_amount)
 
-        # 4. ตรวจสอบว่าเงินพอไหม (เช็คตรงนี้แทนหน้าบ้าน)
-        if current_credit < price_to_deduct:
-            return jsonify({'status': 'error', 'message': f'ยอดเงินในระบบไม่เพียงพอ (ขาดอีก {price_to_deduct - current_credit:g} บาท)'}), 400
-
-        # 5. เปลี่ยนสถานะสินค้าและบันทึกออเดอร์ (แก้ไขใหม่)
-        # 5.1 อัปเดตสต็อก (ลบ sold_to ออกเพื่อป้องกัน Error)
-        patch_payload = {"status": "sold"}
-        patch_res = requests.patch(f"{supabase_url}/rest/v1/products?id=eq.{product['id']}", headers=headers, json=patch_payload)
+        # เปลี่ยนจาก price เป็น price_to_deduct
+        if current_credit < price_to_deduct: 
+            return jsonify({'status': 'error', 'message': f'ยอดเงินไม่เพียงพอ (ขาดอีก {price_to_deduct - current_credit:g} บาท)'}), 400
         
-        # ดักจับ Error ถ้าเปลี่ยนสถานะไม่สำเร็จให้หยุดการทำงานทันที ป้องกันการหักเงินฟรี
-        if patch_res.status_code >= 400:
-            return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการดึงสินค้าจากสต็อก กรุณาลองใหม่'}), 500
+        tz = datetime.timezone(datetime.timedelta(hours=7)) 
+        now = datetime.datetime.now(tz)
+        duration = int(duration_days)
 
-        # 5.2 บันทึกข้อมูลใบเสร็จลงตาราง purchases ให้ครบถ้วน (หน้าประวัติจะได้แสดงผลได้)
-        purchase_payload = {
-            "user_id": current_user_id,
-            "product_id": product['id'],
-            "platform": platform,
-            "has_warranty": warranty,
-            "price": price_to_deduct,
-            "account_login": product.get('account_login'),
-            "account_password": product.get('account_password'),
-            "profile_name": product.get('profile_name'),
-            "pin_code": product.get('pin_code'),
-            "expire_date": product.get('expire_date')
-        }
-        post_res = requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
-
-        # ถ้าระบบบันทึกประวัติล้มเหลว ให้คืนสถานะสินค้ากลับไปเป็นพร้อมขาย
-        if post_res.status_code >= 400:
-            requests.patch(f"{supabase_url}/rest/v1/products?id=eq.{product['id']}", headers=headers, json={"status": "available"})
-            return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการสร้างใบเสร็จ'}), 500
-
-        # 6. หักเครดิตและอัปเดตยอดใช้จ่ายสะสม (total_spent)
+        if duration == 1:
+            expire_time = now + datetime.timedelta(days=1)
+            formatted_expire = expire_time.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            if 22 <= now.hour <= 23:
+                days_to_add = duration
+            else:
+                days_to_add = duration - 1
+            
+            expire_time = now + datetime.timedelta(days=days_to_add)
+            formatted_expire = expire_time.strftime('%Y-%m-%d')
+        
+        update_url = f"{supabase_url}/rest/v1/products?id=eq.{target_product['id']}&status=eq.available"
+        update_payload = {"status": "sold", "expire_date": formatted_expire}
+        update_res = requests.patch(update_url, headers=headers, json=update_payload)
+        updated_rows = update_res.json()
+        
+        if not updated_rows: return jsonify({'status': 'error', 'message': 'ซื้อไม่ทัน สินค้าถูกซื้อไปแล้ว'}), 409
+        purchased_account = updated_rows[0]
+        
         new_credit = current_credit - price_to_deduct
-        total_spent = float(user.get('total_spent', 0)) + price_to_deduct
-
-        requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={
-            "credit_balance": new_credit,
-            "total_spent": total_spent
-        })
-
-        # 7. อัปเดตสถานะโค้ดส่วนลดว่า "ถูกใช้แล้ว"
+        
+        purchase_payload = {
+            "user_id": current_user_id, "product_id": target_product['id'],
+            "platform": purchased_account.get('platform', ''), "account_login": purchased_account.get('account_login', ''),
+            "account_password": purchased_account.get('account_password', ''), "profile_name": purchased_account.get('profile_name', ''),
+            "pin_code": purchased_account.get('pin_code', ''), "expire_date": formatted_expire, "price": price_to_deduct,
+            "has_warranty": warranty 
+        }
+        requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
+        
+        purchased_account['expire_date'] = formatted_expire
+        purchased_account['warranty_addon'] = warranty_addon
+        purchased_account['has_warranty'] = warranty
+        
+        discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL_BUY")
+        if discord_webhook:
+            try:
+                warranty_text = "มีประกัน" if warranty else "ไม่มีประกัน"
+                notify_msg = f"**[ รายการสั่งซื้อใหม่ ]**\n" \
+                             f"> **ลูกค้า:** `{user['email']}`\n" \
+                             f"> **สินค้า:** `{platform.upper()}` ({duration_days} วัน)\n" \
+                             f"> **ยอดชำระ:** `{price_to_deduct} THB`\n" \
+                             f"> **สถานะ:** `{warranty_text}`\n" \
+                             f"> \n" \
+                             f"> **[ ข้อมูลบัญชีที่จัดส่งให้ลูกค้า ]**\n" \
+                             f"> **ล็อกอิน:** `{purchased_account.get('account_login', '-')}`\n" \
+                             f"> **จอ:** `{purchased_account.get('profile_name', '-')}`\n" \
+                             f"> **วันหมดอายุ:** `{formatted_expire}`"
+                
+                requests.post(discord_webhook, json={'content': notify_msg})
+            except Exception:
+                pass 
+            
+        # --- เปลี่ยนสถานะโค้ดส่วนลดว่าใช้งานแล้ว ---
         if applied_promo_id:
             requests.patch(f"{supabase_url}/rest/v1/promo_codes?id=eq.{applied_promo_id}", headers=headers, json={'is_used': True, 'used_by': current_user_id})
 
-        # 8. แจกโค้ดส่วนลด 10% เมื่อยอดสะสมข้ามหลัก 200 บาท
+        # --- เปลี่ยนเป็นระบบสะสมยอดเงินแจกส่วนลด 10% ---
+        total_spent = float(user.get('total_spent', 0)) + price_to_deduct
         reward_code_generated = None
+
         if user_role != 'reseller':
             if int(total_spent // 200) > int(float(user.get('total_spent', 0)) // 200):
                 reward_code_generated = generate_reward_code()
                 promo_payload = {
                     'code': reward_code_generated, 
-                    'amount': 0, # ไม่ต้องระบุจำนวนเงิน เพราะเราใช้เปอร์เซ็นต์
+                    'amount': 0,
                     'discount_percent': 10, 
                     'is_used': False, 
                     'user_id': current_user_id
                 }
                 requests.post(f"{supabase_url}/rest/v1/promo_codes", headers=headers, json=promo_payload)
 
+        # --- อัปเดตข้อมูลเครดิตและยอดสะสมรวม ---
+        requests.patch(f"{supabase_url}/rest/v1/users?id=eq.{current_user_id}", headers=headers, json={
+            "credit_balance": new_credit,
+            "total_spent": total_spent
+        })
+
         return jsonify({
             'status': 'success', 
-            'data': product, 
+            'data': purchased_account, 
             'remaining_credit': new_credit,
             'total_spent': total_spent,
             'reward_code': reward_code_generated
