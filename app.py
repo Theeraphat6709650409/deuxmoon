@@ -187,18 +187,34 @@ def buy_product(current_user_id):
         if current_credit < price_to_deduct:
             return jsonify({'status': 'error', 'message': f'ยอดเงินในระบบไม่เพียงพอ (ขาดอีก {price_to_deduct - current_credit:g} บาท)'}), 400
 
-        # 5. เปลี่ยนสถานะสินค้าและบันทึกออเดอร์
-        patch_payload = {"status": "sold", "sold_to": current_user_id}
-        requests.patch(f"{supabase_url}/rest/v1/products?id=eq.{product['id']}", headers=headers, json=patch_payload)
+        # 5. เปลี่ยนสถานะสินค้าและบันทึกออเดอร์ (แก้ไขใหม่)
+        # 5.1 อัปเดตสต็อก (ลบ sold_to ออกเพื่อป้องกัน Error)
+        patch_payload = {"status": "sold"}
+        patch_res = requests.patch(f"{supabase_url}/rest/v1/products?id=eq.{product['id']}", headers=headers, json=patch_payload)
+        
+        # ดักจับ Error ถ้าเปลี่ยนสถานะไม่สำเร็จให้หยุดการทำงานทันที ป้องกันการหักเงินฟรี
+        if patch_res.status_code >= 400:
+            return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการดึงสินค้าจากสต็อก กรุณาลองใหม่'}), 500
 
+        # 5.2 บันทึกข้อมูลใบเสร็จลงตาราง purchases ให้ครบถ้วน (หน้าประวัติจะได้แสดงผลได้)
         purchase_payload = {
             "user_id": current_user_id,
             "product_id": product['id'],
             "platform": platform,
             "has_warranty": warranty,
-            "price": price_to_deduct
+            "price": price_to_deduct,
+            "account_login": product.get('account_login'),
+            "account_password": product.get('account_password'),
+            "profile_name": product.get('profile_name'),
+            "pin_code": product.get('pin_code'),
+            "expire_date": product.get('expire_date')
         }
-        requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
+        post_res = requests.post(f"{supabase_url}/rest/v1/purchases", headers=headers, json=purchase_payload)
+
+        # ถ้าระบบบันทึกประวัติล้มเหลว ให้คืนสถานะสินค้ากลับไปเป็นพร้อมขาย
+        if post_res.status_code >= 400:
+            requests.patch(f"{supabase_url}/rest/v1/products?id=eq.{product['id']}", headers=headers, json={"status": "available"})
+            return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการสร้างใบเสร็จ'}), 500
 
         # 6. หักเครดิตและอัปเดตยอดใช้จ่ายสะสม (total_spent)
         new_credit = current_credit - price_to_deduct
