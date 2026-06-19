@@ -133,8 +133,9 @@ export default function Profile({ user, setUser }) {
         }
     };
 
-    const purchaseCount = user.purchase_count || 0;
-    const progressPercent = (purchaseCount / 10) * 100;
+    const totalSpent = parseFloat(user.total_spent || 0);
+    const currentProgress = totalSpent % 200; // หาเศษที่ต้องสะสมในรอบปัจจุบัน
+    const progressPercent = (currentProgress / 200) * 100;
     const isReseller = user.role === 'reseller';
 
     return (
@@ -168,12 +169,11 @@ export default function Profile({ user, setUser }) {
             {/* ส่วนระบบสะสมแต้ม */}
             {!isReseller && (
                 <div className="profile-card">
-                    <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--theme-orange)' }}><Award size={18}/> ระบบสะสมแต้มการซื้อสำเร็จ</h3>
+                    <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--theme-orange)' }}><Award size={18}/> ระบบสะสมยอดการซื้อสำเร็จ</h3>
                     <p style={{ fontSize: '14px', color: '#bbb' }}>ซื้อสินค้าครบทุกๆ 200 บาท รับฟรีทันทีโค้ดส่วนลด 10%</p>
                     
-                    <div className="progress-bar-container">
-                        <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
-                        <div className="progress-text">{purchaseCount} / 200 บาท</div>
+                    <div className="progress-text">
+                        {currentProgress.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / 200 บาท
                     </div>
                 </div>
             )}

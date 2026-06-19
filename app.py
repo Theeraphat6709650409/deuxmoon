@@ -96,7 +96,7 @@ def login():
             secret = os.environ.get("JWT_SECRET", "deuxmoon2026")
             token = jwt.encode({'user_id': user['id'], 'email': user['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)}, secret, algorithm="HS256")
             
-            user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal'), "purchase_count": user.get('purchase_count', 0)}
+            user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal'), "total_spent": user.get('total_spent', 0)}
             return jsonify({'status': 'success', 'token': token, 'data': user_data})
         else:
             return jsonify({'status': 'error', 'message': 'รหัสผ่านไม่ถูกต้อง'}), 401
@@ -442,7 +442,7 @@ def get_user_info(current_user_id):
         users = res.json()
         if not users: return jsonify({'status': 'error', 'message': 'ไม่พบบัญชีผู้ใช้'}), 404
         user = users[0]
-        user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal'), "purchase_count": user.get('purchase_count', 0)}
+        user_data = {"id": user['id'], "email": user['email'], "credit_balance": user['credit_balance'], "role": user.get('role', 'normal'), "total_spent": user.get('total_spent', 0)}
         return jsonify({'status': 'success', 'data': user_data})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
