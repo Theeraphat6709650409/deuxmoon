@@ -55,7 +55,6 @@ export default function Home({ user, setUser, openAuth }) {
     const [receiptData, setReceiptData] = useState(null);
     
     // ตั้งค่า Slider
-    const [currentBanner, setCurrentBanner] = useState(0);
     const banners = [
         { id: 1, src: lineBanner, link: "https://lin.ee/9DAHkG0" },
         { id: 2, src: otpBanner, link: "https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec?authuser=0" }
@@ -63,10 +62,6 @@ export default function Home({ user, setUser, openAuth }) {
 
     useEffect(() => {
         fetchProducts();
-        const timer = setInterval(() => {
-            setCurrentBanner((prev) => (prev + 1) % banners.length);
-        }, 4000);
-        return () => clearInterval(timer);
     }, []);
 
     const fetchProducts = async () => {
@@ -175,16 +170,43 @@ export default function Home({ user, setUser, openAuth }) {
     return (
         <div id="store-section" style={{ marginTop: '30px' }}>
             
-            {/* Banner Slider */}
-            <div className="banner-carousel-container contact-banner">
-                <a href={banners[currentBanner].link} target="_blank" rel="noreferrer">
-                    <img key={currentBanner} src={banners[currentBanner].src} alt="Promotional Banner" className="banner-carousel-slide" />
-                </a>
-                <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
-                    {banners.map((_, idx) => (
-                        <div key={idx} style={{ width: '8px', height: '8px', borderRadius: '50%', background: idx === currentBanner ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'background 0.3s ease' }} />
-                    ))}
-                </div>
+            {/* Banner Section (วางคู่ซ้าย-ขวา) */}
+            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '40px', flexWrap: 'wrap' }}>
+                {banners.map((banner) => (
+                    <a 
+                        key={banner.id} 
+                        href={banner.link} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        style={{ 
+                            flex: '1 1 45%', // แบ่งครึ่งจอ แต่ถ้าย่อจอเล็กกว่าที่กำหนดจะตกลงมาเรียงแนวตั้ง
+                            minWidth: '320px', 
+                            display: 'block',
+                            textDecoration: 'none'
+                        }}
+                    >
+                        <img 
+                            src={banner.src} 
+                            alt={`Promotional Banner ${banner.id}`} 
+                            style={{ 
+                                width: '100%', 
+                                height: 'auto', 
+                                borderRadius: '16px', 
+                                boxShadow: '0 6px 15px rgba(0,0,0,0.3)',
+                                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                                cursor: 'pointer'
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-4px)';
+                                e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 6px 15px rgba(0,0,0,0.3)';
+                            }}
+                        />
+                    </a>
+                ))}
             </div>
 
             <h2 className="section-title">{viewState.title}</h2>
