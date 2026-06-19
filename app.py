@@ -584,7 +584,6 @@ def get_admin_stats(current_user_id):
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
     
-    # รับค่า range จากหน้าบ้าน (ค่าเริ่มต้นคือ all)
     time_range = request.args.get('range', 'all')
 
     try:
@@ -592,10 +591,9 @@ def get_admin_stats(current_user_id):
         if not user_res.json() or user_res.json()[0].get('role') != 'admin':
             return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึง'}), 403
 
-        # สร้างตัวกรองเวลา (Date Filter)
         date_filter = ""
         if time_range != 'all':
-            tz = datetime.timezone(datetime.timedelta(hours=7)) # เวลาไทย
+            tz = datetime.timezone(datetime.timedelta(hours=7)) 
             now = datetime.datetime.now(tz)
             if time_range == 'today':
                 start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -604,26 +602,28 @@ def get_admin_stats(current_user_id):
             elif time_range == '30days':
                 start_date = now - datetime.timedelta(days=30)
             
-            # แปลงเป็นรูปแบบ ISO เพื่อใช้กรองกับ Supabase
             start_date_str = start_date.strftime('%Y-%m-%dT%H:%M:%S')
             date_filter = f"&created_at=gte.{start_date_str}"
 
-        # 1. นับจำนวนสมาชิก (อิงตามเวลาที่สมัคร)
+        # 1. นับจำนวนสมาชิก
         users_url = f"{supabase_url}/rest/v1/users?select=id" + date_filter
         users_res = requests.get(users_url, headers=headers)
         total_users = len(users_res.json())
 
-        # 2. คำนวณยอดเติมเงินรวม (อิงตามเวลาที่เติม)
+        # 2. คำนวณยอดเติมเงินรวม
         topup_url = f"{supabase_url}/rest/v1/topup_transactions?select=amount" + date_filter
         topup_res = requests.get(topup_url, headers=headers)
         total_revenue = sum(float(tx['amount']) for tx in topup_res.json())
 
-        # 3. นับจำนวนออเดอร์ที่ขายออกไป (อิงตามเวลาที่ซื้อ)
-        purchases_url = f"{supabase_url}/rest/v1/purchases?select=id" + date_filter
+        # 3. นับจำนวนออเดอร์ และ **คำนวณยอดขายรวม**
+        purchases_url = f"{supabase_url}/rest/v1/purchases?select=id,price" + date_filter
         purchases_res = requests.get(purchases_url, headers=headers)
-        total_purchases = len(purchases_res.json())
+        purchases_data = purchases_res.json()
+        total_purchases = len(purchases_data)
+        # นำ price ของทุกออเดอร์มาบวกกัน
+        total_sales = sum(float(p.get('price', 0)) for p in purchases_data if p.get('price'))
 
-        # 4. สรุปสถานะสต็อกสินค้า (เป็นข้อมูล Real-time ไม่ต้องใช้ date_filter)
+        # 4. สรุปสถานะสต็อกสินค้า
         products_res = requests.get(f"{supabase_url}/rest/v1/products?select=status", headers=headers)
         products = products_res.json()
         stock_available = len([p for p in products if p.get('status') == 'available'])
@@ -635,6 +635,7 @@ def get_admin_stats(current_user_id):
             'data': {
                 'total_users': total_users,
                 'total_revenue': total_revenue,
+                'total_sales': total_sales, # ส่งค่ายอดขายกลับไปด้วย
                 'total_purchases': total_purchases,
                 'stock': {
                     'available': stock_available,
