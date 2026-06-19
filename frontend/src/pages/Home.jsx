@@ -5,7 +5,7 @@ import { ShoppingCart, CheckCircle, XCircle, AlertCircle, Info, Star, Flame } fr
 import lineBanner from '../assets/6A5A65BE-E36B-4AA2-B2FD-6818D84945F3.png';
 import otpBanner from '../assets/CEB0E771-BCD5-4D0B-B5B3-E37287F4562E.png';
 
-const API_URL = "https://deuxmoon-api.onrender.com";
+const API_URL = "https://deuxmoon-api.onrender.com"; // เปลี่ยนเป็น localhost ของคุณถ้ากำลังรันทดสอบ
 
 const appList = [
     { id: 'netflix', name: 'NETFLIX', img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Netflix_2015_N_logo.svg' },
@@ -54,7 +54,6 @@ export default function Home({ user, setUser, openAuth }) {
     const [viewState, setViewState] = useState({ step: 'apps', appId: null, title: 'เลือกแอปที่ต้องการ', subcats: [], packKey: null });
     const [receiptData, setReceiptData] = useState(null);
     
-    // ตั้งค่า Slider
     const banners = [
         { id: 1, src: lineBanner, link: "https://lin.ee/9DAHkG0" },
         { id: 2, src: otpBanner, link: "https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec?authuser=0" }
@@ -71,7 +70,9 @@ export default function Home({ user, setUser, openAuth }) {
             if (result.status === 'success') {
                 setGlobalStock(result.data);
             }
-        } catch (e) { console.error("Error fetching products", e); } finally {
+        } catch (e) { 
+            console.error("Error fetching products", e); 
+        } finally {
             setIsLoading(false);
         }
     };
@@ -133,16 +134,14 @@ export default function Home({ user, setUser, openAuth }) {
                 if (result.status === 'success') {
                     Swal.close();
     
-                    // ดึงค่า purchase_count ที่หลังบ้านส่งกลับมาอัปเดตลง State หน้าบ้านด้วย
                     const updatedUser = { 
                         ...user, 
                         credit_balance: result.remaining_credit,
-                        purchase_count: result.purchase_count // เพิ่มบรรทัดนี้
+                        purchase_count: result.purchase_count 
                     };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser));
     
-                    // หากแต้มครบ 10 และระบบสุ่มโค้ดเงินสดให้สำเร็จ ให้ขึ้นหน้าต่างเตือนลูกค้าเป็นพิเศษ
                     if (result.reward_code) {
                         Swal.fire({
                             icon: 'success',
@@ -179,7 +178,7 @@ export default function Home({ user, setUser, openAuth }) {
                         target="_blank" 
                         rel="noreferrer" 
                         style={{ 
-                            flex: '1 1 45%', // แบ่งครึ่งจอ แต่ถ้าย่อจอเล็กกว่าที่กำหนดจะตกลงมาเรียงแนวตั้ง
+                            flex: '1 1 45%', 
                             minWidth: '320px', 
                             display: 'block',
                             textDecoration: 'none'
@@ -217,7 +216,8 @@ export default function Home({ user, setUser, openAuth }) {
                         Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton skeleton-app-card" />)
                     ) : (
                         appList.map(app => {
-                            const count = globalStock.filter(item => item.platform.trim().startsWith(app.id)).length;
+                            // การป้องกัน Error (item.platform || '') เพื่อป้องกันกรณีที่ข้อมูลเป็น null
+                            const count = globalStock.filter(item => (item.platform || '').trim().startsWith(app.id)).length;
                             return (
                                 <div key={app.id} className="app-card" onClick={() => handleAppClick(app.id, app.name)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '15px' }}>
                                     <div className="app-icon"><img src={app.img} alt={app.name} /></div>
@@ -225,12 +225,10 @@ export default function Home({ user, setUser, openAuth }) {
                                     {count > 3 ? (
                                         <div style={{ fontSize: '11px', marginTop: '8px', color: '#00dc5a', background: 'rgba(0, 220, 90, 0.1)', border: '1px solid rgba(0, 220, 90, 0.3)', padding: '3px 10px', borderRadius: '12px' }}>พร้อมส่ง {count} รายการ</div>
                                     ) : count > 0 ? (
-                                        /* เปลี่ยนเป็นสีส้ม/ทอง เพื่อให้ดูเป็นของร้อนแรง */
                                         <div style={{ fontSize: '11px', marginTop: '8px', color: '#ffb74d', background: 'rgba(255, 152, 0, 0.15)', border: '1px solid rgba(255, 152, 0, 0.5)', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', animation: 'pulseWarning 1.5s infinite', boxShadow: '0 0 8px rgba(255, 152, 0, 0.2)' }}>
                                             <Flame size={14}/> เหลือเพียง {count} ชิ้น!
                                         </div>
                                     ) : (
-                                        /* สินค้าหมด ทำให้สีดรอปลง กลืนไปกับพื้นหลัง */
                                         <div style={{ fontSize: '11px', marginTop: '8px', color: '#ff4d4d', background: 'rgba(255, 77, 77, 0.05)', border: '1px solid rgba(255, 77, 77, 0.2)', padding: '3px 10px', borderRadius: '12px', opacity: 0.8 }}>สินค้าหมด</div>
                                     )}
                                 </div>
@@ -287,7 +285,7 @@ export default function Home({ user, setUser, openAuth }) {
                             {(receiptData.data.pin_code || receiptData.data.pin) && <div>รหัสเข้าจอ (PIN): <span>{receiptData.data.pin_code || receiptData.data.pin}</span></div>}
                             <div>วันหมดอายุ: <span style={{color:'#ff4d4d'}}>{formatExpireDate(receiptData.data.expire_date)}</span></div>
                             
-                            {receiptData.platform.includes('disney') && (
+                            {(receiptData.platform || '').includes('disney') && (
                                 <div style={{ marginTop: '15px', padding: '15px', background: 'rgba(0, 168, 225, 0.1)', borderLeft: '4px solid #00a8e1', borderRadius: '4px', fontSize: '13px', lineHeight: 1.6, textAlign: 'left', color: '#d6ebff' }}>
                                     <strong style={{ color: '#00a8e1', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}><Info size={16}/> วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง)</strong><br/><br/>
                                     <b>ขั้นตอนที่ 1:</b> นำ <b>เบอร์โทรศัพท์</b> (จากช่องล็อกอินด้านบน) ไปกรอกในแอปหรือเว็บ Disney+ เพื่อส่งคำขอรับรหัส OTP<br/><br/>
@@ -297,7 +295,7 @@ export default function Home({ user, setUser, openAuth }) {
                                 </div>
                             )}
                             
-                            <AppRulesJSX platform={receiptData.platform} />
+                            <AppRulesJSX platform={receiptData.platform || ''} />
                         </div>
                         <button className="btn-buy btn-disney" onClick={() => setReceiptData(null)} style={{ marginTop: '20px' }}>ปิดหน้าต่าง</button>
                     </div>
@@ -310,13 +308,14 @@ export default function Home({ user, setUser, openAuth }) {
 function PackageCard({ pack, globalStock, isReseller, title, onBuy }) {
     const [isWarranty, setIsWarranty] = useState(false);
 
-    const availableItems = globalStock.filter(item => item.platform.trim() === pack.p && parseInt(item.duration_days) === pack.d);
+    // การป้องกัน Error (item.platform || '')
+    const availableItems = globalStock.filter(item => (item.platform || '').trim() === pack.p && parseInt(item.duration_days || 0) === pack.d);
     const count = availableItems.length;
 
     let basePrice = 0, originalPrice = 0;
     if (count > 0) {
         const sampleItem = availableItems[0];
-        const normalPrice = parseFloat(sampleItem.price);
+        const normalPrice = parseFloat(sampleItem.price || 0);
         const wholesalePrice = sampleItem.wholesale_price ? parseFloat(sampleItem.wholesale_price) : null;
         if (isReseller && wholesalePrice) { basePrice = wholesalePrice; originalPrice = normalPrice; }
         else { basePrice = normalPrice; }
@@ -340,7 +339,6 @@ function PackageCard({ pack, globalStock, isReseller, title, onBuy }) {
         <div className="product-card">
             <div className="product-name" style={{ fontSize: '16px', marginBottom: '5px' }}>{pack.label}</div>
             
-            {/* อัปเดตสีในหน้าเลือกแพ็กเกจด้วยเช่นกัน */}
             <div style={{ marginBottom: '8px' }}>
                 {count > 3 ? (
                     <div className="badge-stock badge-available">
@@ -402,7 +400,7 @@ function formatExpireDate(expireStr) {
     return expireStr;
 }
 
-export function AppRulesJSX({ platform }) {
+export function AppRulesJSX({ platform = '' }) {
     let rulesHtml = null;
     const ruleContainerStyle = { marginTop: '15px', padding: '15px', background: 'rgba(255, 99, 71, 0.1)', borderLeft: '4px solid #ff4d4d', borderRadius: '4px', fontSize: '13px', lineHeight: 1.6, textAlign: 'left', color: '#ffd6d6' };
     const titleStyle = { color: '#ff8080', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' };
@@ -493,7 +491,7 @@ export function AppRulesJSX({ platform }) {
     return rulesHtml;
 }
 
-export function getAppRulesText(platform) {
+export function getAppRulesText(platform = '') {
     let rulesText = "";
     if (platform.includes('youtube')) {
         rulesText = "[ YouTube Premium ]\n\n- กฎการใช้งาน\n- ห้ามเปลี่ยนแปลง แก้ไขรหัสหรือข้อมูลใดๆทั้งสิ้น ปรับ 1000฿\n- เมลร้านไม่อนุญาตให้เอาไปเชื่อมต่อแอพอื่นนอกจาก youtube นะคะ\n- พบเจอขออนุญาตยึดคืนโดยไม่จำเป็นต้องแจ้งให้ทราบ ขอบคุณค่ะ";

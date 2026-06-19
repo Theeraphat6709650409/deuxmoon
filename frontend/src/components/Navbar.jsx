@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LogIn, LogOut, Wallet, History as HistoryIcon, User, ShieldAlert } from 'lucide-react';
+import { LogIn, LogOut, Wallet, History as HistoryIcon, User, ShieldAlert, BarChart3 } from 'lucide-react';
 import logoImg from '../assets/EAA8607F-0D59-4525-A5EE-4E9736CABD0A.png';
+
 
 const API_URL = "https://deuxmoon-api.onrender.com";
 
@@ -78,7 +79,7 @@ export default function Navbar({ user, onLogout, onOpenAuth, onOpenTopup }) {
                       <BarChart3 size={16} /> สถิติร้าน
                     </button>
                   </Link>
-                    <Link to="/admin/pending-reset" style={{ textDecoration: 'none' }}>
+                  <Link to="/admin/pending-reset" style={{ textDecoration: 'none' }}>
                     <button className="btn-topup" style={{ background: 'linear-gradient(135deg, #ff9e2c 0%, #ff6d00 100%)', color: '#111', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <ShieldAlert size={16} /> จัดการสต็อก
                     </button>
