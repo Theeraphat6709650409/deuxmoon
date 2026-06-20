@@ -150,7 +150,7 @@ def buy_product(current_user_id):
                         warranty_addon = 25
             else:
                 if int(duration_days) == 7:
-                    warranty_addon = 10
+                    warranty_addon = 9
                 elif int(duration_days) == 30:
                     warranty_addon = 25
                 
