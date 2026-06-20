@@ -360,7 +360,7 @@ function PackageCard({ pack, globalStock, isReseller, title, onBuy }) {
         if (isReseller) {
             warrantyAddon = (pack.d === 7) ? 5 : ((pack.p === 'netflix_mobile') ? 23 : 25);
         } else {
-            warrantyAddon = (pack.d === 7) ? 10 : 25;
+            warrantyAddon = (pack.d === 7) ? 9 : 25;
         }
     }
 
