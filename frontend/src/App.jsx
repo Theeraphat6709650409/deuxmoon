@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { LogIn, UserPlus, KeyRound, QrCode, Upload, XCircle, ShieldCheck } from 'lucide-react';
+import { LogIn, UserPlus, KeyRound, QrCode, Upload, XCircle, ShieldCheck, CloudUpload } from 'lucide-react';
 
 import AdminPendingReset from './pages/AdminPendingReset';
 import Profile from './pages/Profile';
@@ -193,11 +193,48 @@ function App() {
               </h2>
               <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>สแกน QR Code เพื่อเติมเครดิต</p>
               <img src={qrImg} alt="QR Code รับเงิน" style={{ width: '200px', height: '200px', margin: '0 auto 20px', borderRadius: '10px', display: 'block', objectFit: 'cover' }} />
-              <input type="file" onChange={(e) => setSlipFile(e.target.files[0])} style={{ marginBottom: '15px', width: '100%' }} />
-              <button className="btn-buy btn-disney" style={{ width: '100%' }} onClick={handleTopup}>
+              
+              {/* --- เริ่มส่วนอัปโหลดสลิปแบบใหม่ --- */}
+              <label style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '25px 20px',
+                  margin: '15px 0 20px 0',
+                  border: '2px dashed rgba(255, 255, 255, 0.3)',
+                  borderRadius: '16px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'}
+              >
+                  <CloudUpload size={48} color={slipFile ? '#00dc5a' : '#fff'} style={{ marginBottom: '12px' }} />
+                  
+                  <span style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>
+                      {slipFile ? 'แนบไฟล์สำเร็จ' : 'อัปโหลดสลิป'}
+                  </span>
+                  
+                  <span style={{ color: slipFile ? '#00dc5a' : '#888', fontSize: '14px', marginTop: '6px', textAlign: 'center', wordBreak: 'break-all' }}>
+                      {slipFile ? slipFile.name : 'คลิกเพื่อเลือกไฟล์รูปภาพ'}
+                  </span>
+
+                  <input 
+                      type="file" 
+                      accept="image/*"
+                      style={{ display: 'none' }} 
+                      onChange={(e) => setSlipFile(e.target.files[0])} 
+                  />
+              </label>
+              {/* --- จบส่วนอัปโหลดสลิปแบบใหม่ --- */}
+
+              <button className="btn-buy" style={{ width: '100%', background: 'linear-gradient(90deg, #ff9e2c, #f44336)', border: 'none', padding: '12px', fontSize: '16px' }} onClick={handleTopup}>
                 <Upload size={18}/> ตรวจสอบสลิป
               </button>
-              <button className="btn-buy" style={{ background: 'transparent', border: '1px solid #555', marginTop: '10px', width: '100%', color: '#ccc' }} onClick={() => setShowTopup(false)}>
+              
+              <button className="btn-buy" style={{ background: 'transparent', border: '1px solid #555', marginTop: '10px', width: '100%', color: '#ccc', padding: '12px' }} onClick={() => { setShowTopup(false); setSlipFile(null); }}>
                 <XCircle size={18}/> ยกเลิก
               </button>
             </div>
