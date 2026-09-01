@@ -243,9 +243,13 @@ def buy_product(current_user_id):
                              f"> **จอ:** `{purchased_account.get('profile_name', '-')}`\n" \
                              f"> **วันหมดอายุ:** `{formatted_expire}`"
                 
-                requests.post(discord_webhook, json={'content': notify_msg})
-            except Exception:
-                pass 
+                # เพิ่ม print ดูสถานะตรงนี้
+                r = requests.post(discord_webhook.strip(), json={'content': notify_msg}, timeout=10)
+                print(f"--> DISCORD BUY STATUS: {r.status_code} | {r.text}", flush=True)
+            except Exception as e:
+                print(f"--> DISCORD BUY FAILED: {e}", flush=True)
+        else:
+            print("--> DISCORD BUY FAILED: DISCORD_WEBHOOK_URL_BUY is None or Empty", flush=True) 
             
         # --- เปลี่ยนสถานะโค้ดส่วนลดว่าใช้งานแล้ว ---
         if applied_promo_id:
