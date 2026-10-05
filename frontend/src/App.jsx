@@ -10,7 +10,7 @@ import Home from './pages/Home';
 import History from './pages/History';
 import AdminDashboard from './pages/AdminDashboard';
 
-import qrImg from './assets/my-qr.jpg'; 
+import qrImg from './assets/my-qr2.png'; 
 
 // Component สำหรับป้องกันสิทธิ์ Admin
 const AdminRoute = ({ user, children }) => {
