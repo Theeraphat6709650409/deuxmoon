@@ -319,10 +319,8 @@ export default function Home({ user, setUser, openAuth }) {
                             {(receiptData.platform || '').includes('disney') && (
                                 <div style={{ marginTop: '15px', padding: '15px', background: 'rgba(0, 168, 225, 0.1)', borderLeft: '4px solid #00a8e1', borderRadius: '4px', fontSize: '13px', lineHeight: 1.6, textAlign: 'left', color: '#d6ebff' }}>
                                     <strong style={{ color: '#00a8e1', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}><Info size={16}/> วิธีเข้าสู่ระบบ DISNEY+ (ดึง OTP ด้วยตัวเอง)</strong><br/><br/>
-                                    <b>ขั้นตอนที่ 1:</b> นำ <b>เบอร์โทรศัพท์</b> (จากช่องล็อกอินด้านบน) ไปกรอกในแอปหรือเว็บ Disney+ เพื่อส่งคำขอรับรหัส OTP<br/><br/>
-                                    <b>ขั้นตอนที่ 2:</b> เข้าไปที่ <a href="https://script.google.com/macros/s/AKfycbwuCoU1EvLlxuAZxWQeqg4gh5Ut2_130j-yHRL3TjPEr7v4kkAyIc-IyFIrJYHaxQiL/exec?authuser=0" target="_blank" rel="noreferrer" style={{ color: '#ffb74d', textDecoration: 'underline', fontWeight: 'bold' }}>เว็บดึงรหัส OTP (คลิกลิงก์นี้)</a> 
-                                    แล้วนำ <b>อีเมล</b> (ในช่องรหัสผ่าน) และ <b>รหัส PIN</b> ไปกรอกเพื่อดึงรหัส<br/><br/>
-                                    <b>ขั้นตอนที่ 3:</b> นำรหัส OTP 4 หลัก กลับไปกรอกในแอป Disney+ เพื่อเริ่มรับชมได้เลยครับ
+                                    <b>ขั้นตอนที่ 1:</b> นำ <b>บัญชี</b> (จากช่องบัญชี (ล็อกอิน)) ไปกรอกในแอปหรือเว็บ Disney+<br/><br/>
+                                    <b>ขั้นตอนที่ 2:</b> กดปุ่ม <b>ใช้การกรอกรหัสผ่านแทน</b> แล้วนำ <b>รหัสผ่าน</b> (ในช่องรหัสผ่าน) ไปใส่
                                 </div>
                             )}
                             
